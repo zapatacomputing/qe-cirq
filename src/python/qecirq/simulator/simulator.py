@@ -60,20 +60,6 @@ class CirqSimulator(QuantumSimulator):
         
         
         result_object = Simulator().run(cirq_circuit, repetitions= self.n_samples)
-        # keys = list(range(len(qubits)))
-
-        # numpy_samples = list(zip(*(result_object._measurements[str(sub_key)]
-        #                 for sub_key in keys)))
-        
-        # samples = []
-        # for numpy_bitstring in numpy_samples:
-        #     bitstrings = []
-        #     for key in numpy_bitstring:
-        #         bitstrings.append(key[0])
-        #     samples.append(tuple(bitstrings))
-        
-        # measurement = Measurements() 
-        # measurement.bitstrings = samples
         measurement = get_measurement_from_cirq_result_object(result_object, qubits)
         return measurement
 
