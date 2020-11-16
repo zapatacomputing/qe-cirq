@@ -1,4 +1,5 @@
 import numpy as np
+from itertools import cycle
 from openfermion.ops import QubitOperator, IsingOperator
 from openfermion.transforms import get_sparse_operator
 
@@ -10,7 +11,7 @@ from zquantum.core.measurement import (
     Measurements,
 )
 
-from cirq import Circuit, measure, Simulator
+from cirq import Circuit, measure, Simulator, measure_each
 from cirq import DensityMatrixSimulator
 from cirq import generalized_amplitude_damp
 
@@ -54,49 +55,56 @@ class CirqSimulator(QuantumSimulator):
 
         cirq_circuit = circuit.to_cirq()
         qubits = list(cirq_circuit.all_qubits())
-        cirq_circuit.append(measure(*qubits, key= "result"))
+        for i in range(0, len(qubits)):
+            cirq_circuit.append(measure_each(qubits[i]))
         
-        counts_dict = Simulator().run(cirq_circuit, repetitions= self.n_samples).histogram(key='result')
-        print(counts_dict)
-        counts_dict = {"{0:b}".format(intstring).zfill(num_qubits): counts_dict[intstring] for intstring in counts_dict}
-        measurements = Measurements.from_counts(counts_dict)
-        print('bitstrings: ', measurements.bitstrings)
         
-        # reversed_counts_dict ={}
-        # for bitstring in counts_dict.keys():
-        #     reversed_counts_dict[bitstring[::-1]] = counts_dict[bitstring]
-        return Measurements.from_counts(counts_dict)
+        result_object = Simulator().run(cirq_circuit, repetitions= self.n_samples)
+        # keys = list(range(len(qubits)))
+
+        # numpy_samples = list(zip(*(result_object._measurements[str(sub_key)]
+        #                 for sub_key in keys)))
+        
+        # samples = []
+        # for numpy_bitstring in numpy_samples:
+        #     bitstrings = []
+        #     for key in numpy_bitstring:
+        #         bitstrings.append(key[0])
+        #     samples.append(tuple(bitstrings))
+        
+        # measurement = Measurements() 
+        # measurement.bitstrings = samples
+        measurement = get_measurement_from_cirq_result_object(result_object, qubits)
+        return measurement
 
 
-    # def run_circuitset_and_measure(self, circuitset, **kwargs):
-    #     """ Run a set of circuits and measure a certain number of bitstrings.
-    #     Note: the number of bitstrings measured is derived from self.n_samples
-    #     Args:
-    #         circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
-    #     Returns:
-    #         a list of lists of bitstrings (a list of lists of tuples)
-    #     """
-    #     cirq_circuitset = []
-    #     measurements_set = []
-    #     for circuit in circuitset:
-    #         num_qubits = len(circuit.qubits)
-    #         cirq_circuit = circuit.to_cirq()
-    #         print(cirq_circuit)
-    #         qubits = list(cirq_circuit.all_qubits())
-    #         cirq_circuit.append(measure(*qubits, key= "result"))
-    #         counts_dict = Simulator().run(cirq_circuit, repetitions= self.n_samples).histogram(key="result")
-    #         counts_dict = {"{0:b}".format(intstring).zfill(num_qubits): counts_dict[intstring] for intstring in counts_dict}
-            
-    #         print(counts_dict)
-    #         reversed_counts_dict ={}
-    #         # for bitstring in counts_dict.keys():
-    #         #     reversed_counts_dict[bitstring[::-1]] = counts_dict[bitstring]
-    #         # print('----------------------------------------------------------')
-    #         # print(reversed_counts_dict)
-    #         measurements = Measurements.from_counts(counts_dict)
-    #         measurements_set.append(measurements)
+    def run_circuitset_and_measure(self, circuitset, **kwargs):
+        """ Run a set of circuits and measure a certain number of bitstrings.
+        Note: the number of bitstrings measured is derived from self.n_samples
+        Args:
+            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
+        Returns:
+            a list of lists of bitstrings (a list of lists of tuples)
+        """
+        cirq_circuitset = []
+        measurements_set = []
+        qubit_listset = []
+        for circuit in circuitset:
+            num_qubits = len(circuit.qubits)
+            cirq_circuit = circuit.to_cirq()
+            qubits = list(cirq_circuit.all_qubits())
+            for i in range(0, len(qubits)):
+                cirq_circuit.append(measure_each(qubits[i]))
+            cirq_circuitset.append(cirq_circuit)
+            qubit_listset.append(qubits)
+        result = Simulator().run_batch(cirq_circuitset, repetitions= self.n_samples)
 
-    #     return measurements_set
+
+        for i in range(len(cirq_circuitset)):
+            measurements = get_measurement_from_cirq_result_object(result[i][0], qubit_listset[i])
+            measurements_set.append(measurements)   
+ 
+        return measurements_set
 
     def get_expectation_values(self, circuit, qubit_operator, **kwargs):
         """ Run a circuit and measure the expectation values with respect to a 
@@ -182,3 +190,22 @@ class CirqSimulator(QuantumSimulator):
         wavefunction = circuit.to_cirq.final_wavefunction()
  
         return wavefunction
+
+def get_measurement_from_cirq_result_object(result_object, qubits):
+
+    keys = list(range(len(qubits)))
+
+    numpy_samples = list(zip(*(result_object._measurements[str(sub_key)]
+                    for sub_key in keys)))
+    
+    samples = []
+    for numpy_bitstring in numpy_samples:
+        bitstrings = []
+        for key in numpy_bitstring:
+            bitstrings.append(key[0])
+        samples.append(tuple(bitstrings))
+    
+    measurement = Measurements() 
+    measurement.bitstrings = samples
+
+    return measurement
