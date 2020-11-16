@@ -1,5 +1,6 @@
 import numpy as np
 from openfermion.ops import QubitOperator, IsingOperator
+from openfermion.transforms import get_sparse_operator
 
 from qeopenfermion import expectation, change_operator_type
 from zquantum.core.interfaces.backend import QuantumSimulator
@@ -9,13 +10,18 @@ from zquantum.core.measurement import (
     Measurements,
 )
 
+from cirq import Circuit, measure, Simulator
+from cirq import DensityMatrixSimulator
+from cirq import generalized_amplitude_damp
+
+
+
 
 class CirqSimulator(QuantumSimulator):
     def __init__(
         self,
         n_samples=None,
         noise_model=None,
-        optimization_level=0,
         **kwargs,
     ):
         """ Get a cirq device (simulator or QPU) that adheres to the 
@@ -32,8 +38,8 @@ class CirqSimulator(QuantumSimulator):
         self.noise_model = noise_model
         self.num_circuits_run = 0
         self.num_jobs_run = 0
+   
 
-    #TODO: Finish the run_circuit_and_measure_function
     def run_circuit_and_measure(self, circuit, **kwargs):
         """ Run a circuit and measure a certain number of bitstrings. Note: the
         number of bitstrings measured is derived from self.n_samples
@@ -46,44 +52,51 @@ class CirqSimulator(QuantumSimulator):
         self.num_jobs_run += 1
         num_qubits = len(circuit.qubits)
 
-        ibmq_circuit = circuit.to_cirq()
- 
-
-        # Run job on device and get counts #TODO: add method to get samples
-        raw_counts = (
- 
-        )
-
-        return Measurements.from_counts() #TODO: Determine how to use Measurement object in correspondence with cirq
-
-    def run_circuitset_and_measure(self, circuitset, **kwargs):
-        """ Run a set of circuits and measure a certain number of bitstrings.
-        Note: the number of bitstrings measured is derived from self.n_samples
-        Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
-        Returns:
-            a list of lists of bitstrings (a list of lists of tuples)
-        """
-        self.num_circuits_run += len(circuitset)
-        self.num_jobs_run += 1
-        cirq_circuitset = []
-        for circuit in circuitset:
-            num_qubits = len(circuit.qubits)
-
-            cirq_circuit = circuit.to_cirq()
- 
-            cirq_circuitset.append(cirq_circuit)
+        cirq_circuit = circuit.to_cirq()
+        qubits = list(cirq_circuit.all_qubits())
+        cirq_circuit.append(measure(*qubits, key= "result"))
+        
+        counts_dict = Simulator().run(cirq_circuit, repetitions= self.n_samples).histogram(key='result')
+        print(counts_dict)
+        counts_dict = {"{0:b}".format(intstring).zfill(num_qubits): counts_dict[intstring] for intstring in counts_dict}
+        measurements = Measurements.from_counts(counts_dict)
+        print('bitstrings: ', measurements.bitstrings)
+        
+        # reversed_counts_dict ={}
+        # for bitstring in counts_dict.keys():
+        #     reversed_counts_dict[bitstring[::-1]] = counts_dict[bitstring]
+        return Measurements.from_counts(counts_dict)
 
 
+    # def run_circuitset_and_measure(self, circuitset, **kwargs):
+    #     """ Run a set of circuits and measure a certain number of bitstrings.
+    #     Note: the number of bitstrings measured is derived from self.n_samples
+    #     Args:
+    #         circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
+    #     Returns:
+    #         a list of lists of bitstrings (a list of lists of tuples)
+    #     """
+    #     cirq_circuitset = []
+    #     measurements_set = []
+    #     for circuit in circuitset:
+    #         num_qubits = len(circuit.qubits)
+    #         cirq_circuit = circuit.to_cirq()
+    #         print(cirq_circuit)
+    #         qubits = list(cirq_circuit.all_qubits())
+    #         cirq_circuit.append(measure(*qubits, key= "result"))
+    #         counts_dict = Simulator().run(cirq_circuit, repetitions= self.n_samples).histogram(key="result")
+    #         counts_dict = {"{0:b}".format(intstring).zfill(num_qubits): counts_dict[intstring] for intstring in counts_dict}
+            
+    #         print(counts_dict)
+    #         reversed_counts_dict ={}
+    #         # for bitstring in counts_dict.keys():
+    #         #     reversed_counts_dict[bitstring[::-1]] = counts_dict[bitstring]
+    #         # print('----------------------------------------------------------')
+    #         # print(reversed_counts_dict)
+    #         measurements = Measurements.from_counts(counts_dict)
+    #         measurements_set.append(measurements)
 
-        # Run job on device and get counts
-    
-        measurements_set = []
-  
-        measurements = Measurements.from_counts(reversed_counts)
-        measurements_set.append(measurements)
-
-        return measurements_set
+    #     return measurements_set
 
     def get_expectation_values(self, circuit, qubit_operator, **kwargs):
         """ Run a circuit and measure the expectation values with respect to a 
@@ -121,7 +134,6 @@ class CirqSimulator(QuantumSimulator):
         """
         self.num_circuits_run += 1
         self.num_jobs_run += 1
-        operator = change_operator_type(qubit_operator, QubitOperator)
         wavefunction = self.get_wavefunction(circuit)
 
         # Pyquil does not support PauliSums with no terms.
@@ -130,8 +142,10 @@ class CirqSimulator(QuantumSimulator):
 
         values = []
 
-        for op in operator:
-            values.append(expectation(op, wavefunction))
+        for pauli_term in qubit_operator:
+            sparse_pauli_term_ndarray = get_sparse_operator(pauli_term).toarray()
+            expectation_value = np.real(wavefunction.conj().T @ parse_pauli_term_ndarray @ wavefunction)
+            values.append(expectation_value)
         return expectation_values_to_real(ExpectationValues(np.asarray(values)))
 
     def get_expectation_values_for_circuitset(self, circuitset, operator, **kwargs):
@@ -156,8 +170,7 @@ class CirqSimulator(QuantumSimulator):
             expectation_values_set.append(expectation_values)
 
         return expectation_values_set
-    
-    #TODO: Finish this function
+
     def get_wavefunction(self, circuit):
         """ Run a circuit and get the wavefunction of the resulting statevector.
         Args:
@@ -165,5 +178,7 @@ class CirqSimulator(QuantumSimulator):
         Returns:
             pyquil.wavefunction.Wavefunction. # TODO:change return type
         """
+
+        wavefunction = circuit.to_cirq.final_wavefunction()
  
-        return Wavefunction(wavefunction)
+        return wavefunction
