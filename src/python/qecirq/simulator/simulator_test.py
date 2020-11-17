@@ -49,6 +49,35 @@ class TestCirqSimulator(unittest.TestCase):
                 for measurement in measurements.bitstrings:
                     self.assertEqual(measurement, (1, 0, 0))
 
+    def test_get_wavefunction(self):
+        # Given
+        circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+
+        # When
+        wavefunction = self.simulator.get_wavefunction(circuit)
+        # Then
+        self.assertIsInstance(wavefunction, np.ndarray)
+        self.assertEqual(len(wavefunction), 8)
+        self.assertAlmostEqual(wavefunction[0], (1 / np.sqrt(2) + 0j))
+        self.assertAlmostEqual(wavefunction[7], (1 / np.sqrt(2) + 0j))
+
+    def test_get_exact_expectation_values(self):
+        # Given
+        circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+        qubit_operator = QubitOperator("2[] - [Z0 Z1] + [X0 X2]")
+        target_values = np.array([2.0, -1.0, 0.0])
+
+        # When
+      
+        expectation_values = self.simulator.get_exact_expectation_values(
+            circuit, qubit_operator
+        )
+        # Then
+        np.testing.assert_array_almost_equal(
+            expectation_values.values, target_values
+        )
+        self.assertIsInstance(expectation_values.values, np.ndarray)
+
 
         
 

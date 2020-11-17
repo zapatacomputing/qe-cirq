@@ -129,6 +129,7 @@ class CirqSimulator(QuantumSimulator):
         self.num_circuits_run += 1
         self.num_jobs_run += 1
         wavefunction = self.get_wavefunction(circuit)
+        n_qubits = len(circuit.qubits)
 
         # Pyquil does not support PauliSums with no terms.
         if len(qubit_operator.terms) == 0:
@@ -137,9 +138,14 @@ class CirqSimulator(QuantumSimulator):
         values = []
 
         for pauli_term in qubit_operator:
-            sparse_pauli_term_ndarray = get_sparse_operator(pauli_term).toarray()
-            expectation_value = np.real(wavefunction.conj().T @ parse_pauli_term_ndarray @ wavefunction)
-            values.append(expectation_value)
+            sparse_pauli_term_ndarray = get_sparse_operator(pauli_term, n_qubits=n_qubits).toarray()
+            if np.size(sparse_pauli_term_ndarray) == 1:
+                expectation_value = sparse_pauli_term_ndarray[0][0]
+                values.append(expectation_value)
+            else:
+                expectation_value = np.real(wavefunction.conj().T @ sparse_pauli_term_ndarray @ wavefunction)
+                values.append(expectation_value)
+
         return expectation_values_to_real(ExpectationValues(np.asarray(values)))
 
     def get_expectation_values_for_circuitset(self, circuitset, operator, **kwargs):
@@ -170,10 +176,10 @@ class CirqSimulator(QuantumSimulator):
         Args:
             circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
         Returns:
-            pyquil.wavefunction.Wavefunction. # TODO:change return type
+            cirq.finale_.Wavefunction. # TODO:change return type
         """
 
-        wavefunction = circuit.to_cirq.final_wavefunction()
+        wavefunction = circuit.to_cirq().final_state_vector()
  
         return wavefunction
 
