@@ -11,6 +11,10 @@ from zquantum.core.interfaces.backend_test import QuantumSimulatorTests
 from zquantum.core.measurement import ExpectationValues
 from ..simulator import CirqSimulator
 
+from cirq import (depolarize, asymmetric_depolarize, 
+                generalized_amplitude_damp, amplitude_damp,
+                phase_damp, phase_flip, bit_flip)
+
 
 
 class TestCirqSimulator(unittest.TestCase):
@@ -27,8 +31,8 @@ class TestCirqSimulator(unittest.TestCase):
     def test_run_circuit_and_measure(self):
         # Given
         circuit = Circuit(Program(X(0), CNOT(1, 2)))
-
-        measurements = self.simulator.run_circuit_and_measure(circuit)
+        simulator = CirqSimulator(n_samples=self.n_samples)
+        measurements = simulator.run_circuit_and_measure(circuit)
         self.assertEqual(len(measurements.bitstrings), self.n_samples)
 
         for measurement in measurements.bitstrings:
@@ -38,10 +42,11 @@ class TestCirqSimulator(unittest.TestCase):
     def test_run_circuitset_and_measure(self):
 
             #Given
+            simulator = CirqSimulator(n_samples=self.n_samples)
             circuit = Circuit(Program(X(0), CNOT(1, 2)))
             n_circuits = 5
             # When
-            measurements_set = self.simulator.run_circuitset_and_measure([circuit] * n_circuits)
+            measurements_set = simulator.run_circuitset_and_measure([circuit] * n_circuits)
             # Then
             self.assertEqual(len(measurements_set), n_circuits)
             for measurements in measurements_set:
@@ -51,10 +56,11 @@ class TestCirqSimulator(unittest.TestCase):
 
     def test_get_wavefunction(self):
         # Given
+        simulator = CirqSimulator(n_samples=self.n_samples)
         circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
 
         # When
-        wavefunction = self.simulator.get_wavefunction(circuit)
+        wavefunction = simulator.get_wavefunction(circuit)
         # Then
         self.assertIsInstance(wavefunction, np.ndarray)
         self.assertEqual(len(wavefunction), 8)
@@ -63,13 +69,14 @@ class TestCirqSimulator(unittest.TestCase):
 
     def test_get_exact_expectation_values(self):
         # Given
+        simulator = CirqSimulator(n_samples=self.n_samples)
         circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
         qubit_operator = QubitOperator("2[] - [Z0 Z1] + [X0 X2]")
         target_values = np.array([2.0, -1.0, 0.0])
 
         # When
       
-        expectation_values = self.simulator.get_exact_expectation_values(
+        expectation_values = simulator.get_exact_expectation_values(
             circuit, qubit_operator
         )
         # Then
@@ -77,6 +84,37 @@ class TestCirqSimulator(unittest.TestCase):
             expectation_values.values, target_values
         )
         self.assertIsInstance(expectation_values.values, np.ndarray)
+
+    def test_get_noisy_exact_expectation_values(self):
+        # Given
+        noise = 0.0002
+        noise_model = depolarize(p=noise)
+        simulator = CirqSimulator(n_samples=self.n_samples, noise_model =noise_model)
+        circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+        qubit_operator = QubitOperator("2[] - [Z0 Z1] + [X0 X2]")
+        target_values = np.array([2.0, -1.0, 0.0])
+
+        expectation_values = simulator.get_exact_noisy_expectation_values(
+            circuit, qubit_operator
+        )
+        self.assertEqual(expectation_values.values[0], target_values[0])
+
+
+    # def test_get_noisy_expectation_values(self):
+    #     # Given
+    #     noise = 0.0002
+    #     noise_model = depolarize(p=noise)
+    #     simulator = CirqSimulator(n_samples=self.n_samples, noise_model =noise_model)
+    #     circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+    #     qubit_operator = QubitOperator("-[Z0 Z1] + [X0 X2]")
+        
+    #     target_values = np.array([-1.0, 0.0])
+    #     measured_values = []
+    #     for term in qubit_operator.terms:
+    #         measured_values.append(simulator.get_expectation_values(circuit, term))
+    #     self.assertEqual(expectation_values.values[0], target_values[0])
+    #     self.assertEQual(expectation_values.values[1], target_values[1])
+    
 
 
         
