@@ -38,7 +38,6 @@ class TestCirqSimulator(unittest.TestCase):
         for measurement in measurements.bitstrings:
             self.assertEqual(measurement, (1, 0, 0))
     
-
     def test_run_circuitset_and_measure(self):
 
             #Given
@@ -87,33 +86,18 @@ class TestCirqSimulator(unittest.TestCase):
 
     def test_get_noisy_exact_expectation_values(self):
         # Given
-        noise = 0.0002
+        noise = 0.00002
         noise_model = depolarize(p=noise)
-        simulator = CirqSimulator(n_samples=self.n_samples, noise_model =noise_model)
+        simulator = CirqSimulator(noise_model =noise_model)
         circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
-        qubit_operator = QubitOperator("2[] - [Z0 Z1] + [X0 X2]")
-        target_values = np.array([2.0, -1.0, 0.0])
+        qubit_operator = QubitOperator("-[Z0 Z1] + [X0 X2]")
+        target_values = np.array([ -1.0, 0.0])
 
         expectation_values = simulator.get_exact_noisy_expectation_values(
             circuit, qubit_operator
         )
         self.assertEqual(expectation_values.values[0], target_values[0])
 
-
-    # def test_get_noisy_expectation_values(self):
-    #     # Given
-    #     noise = 0.0002
-    #     noise_model = depolarize(p=noise)
-    #     simulator = CirqSimulator(n_samples=self.n_samples, noise_model =noise_model)
-    #     circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
-    #     qubit_operator = QubitOperator("-[Z0 Z1] + [X0 X2]")
-        
-    #     target_values = np.array([-1.0, 0.0])
-    #     measured_values = []
-    #     for term in qubit_operator.terms:
-    #         measured_values.append(simulator.get_expectation_values(circuit, term))
-    #     self.assertEqual(expectation_values.values[0], target_values[0])
-    #     self.assertEQual(expectation_values.values[1], target_values[1])
     
 
 
