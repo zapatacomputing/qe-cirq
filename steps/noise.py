@@ -12,4 +12,4 @@ def get_cirq_noise_model(noise_specs: Dict):
     noise_model_func = get_func_from_specs(specs)
     noise_model = noise_model_func(**specs)
     serialized_noise_model = cirq.to_json(noise_model)
-    save_noise_model(serialized_noise_model, 'qecirq.noise', 'load_noise_model_from_json')
+    save_noise_model(serialized_noise_model, 'qecirq.noise', 'load_noise_model_from_json', 'noise-model.json')
