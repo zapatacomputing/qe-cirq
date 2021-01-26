@@ -3,7 +3,7 @@ from itertools import cycle
 from openfermion.ops import QubitOperator, IsingOperator
 from openfermion.transforms import get_sparse_operator
 
-from qeopenfermion import expectation, change_operator_type
+from zquantum.core.openfermion import expectation, change_operator_type
 from zquantum.core.interfaces.backend import QuantumSimulator
 from zquantum.core.measurement import (
     expectation_values_to_real,
