@@ -3,7 +3,7 @@ from cirq import (depolarize, asymmetric_depolarize,
 from cirq import to_json, read_json
 
 
-def get_depolarizing_channel(T, t_gate=10e-9)):
+def get_depolarizing_channel(T, t_gate=10e-9):
     """Get the depolarizing channel
 
     Args:
