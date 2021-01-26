@@ -111,25 +111,29 @@ class CirqSimulator(QuantumSimulator):
         """
         self.num_circuits_run += 1
         self.num_jobs_run += 1
-        wavefunction = self.get_wavefunction(circuit)
-        n_qubits = len(circuit.qubits)
 
-        # Pyquil does not support PauliSums with no terms.
-        if len(qubit_operator.terms) == 0:
-            return ExpectationValues(np.zeros((0,)))
+        if self.noise_model is not None:
+            return self.get_exact_noisy_expectation_values(circuit, qubit_operator, **kwargs)
+        else:
+            wavefunction = self.get_wavefunction(circuit)
+            n_qubits = len(circuit.qubits)
 
-        values = []
+            # Pyquil does not support PauliSums with no terms.
+            if len(qubit_operator.terms) == 0:
+                return ExpectationValues(np.zeros((0,)))
 
-        for pauli_term in qubit_operator:
-            sparse_pauli_term_ndarray = get_sparse_operator(pauli_term, n_qubits=n_qubits).toarray()
-            if np.size(sparse_pauli_term_ndarray) == 1:
-                expectation_value = sparse_pauli_term_ndarray[0][0]
-                values.append(expectation_value)
-            else:
-                expectation_value = np.real(wavefunction.conj().T @ sparse_pauli_term_ndarray @ wavefunction)
-                values.append(expectation_value)
+            values = []
 
-        return expectation_values_to_real(ExpectationValues(np.asarray(values)))
+            for pauli_term in qubit_operator:
+                sparse_pauli_term_ndarray = get_sparse_operator(pauli_term, n_qubits=n_qubits).toarray()
+                if np.size(sparse_pauli_term_ndarray) == 1:
+                    expectation_value = sparse_pauli_term_ndarray[0][0]
+                    values.append(expectation_value)
+                else:
+                    expectation_value = np.real(wavefunction.conj().T @ sparse_pauli_term_ndarray @ wavefunction)
+                    values.append(expectation_value)
+
+            return expectation_values_to_real(ExpectationValues(np.asarray(values)))
 
     def get_exact_noisy_expectation_values(self, circuit, qubit_operator, **kwargs):
         """ Run a circuit to prepare a wavefunction and measure the exact 
