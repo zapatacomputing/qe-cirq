@@ -1,6 +1,7 @@
 from zquantum.core.utils import get_func_from_specs, save_noise_model
 from typing import Dict
 import yaml
+import cirq
 
 def get_cirq_noise_model(noise_specs: Dict):
     """ Creates a simple (pre-baked) Cirq noise model and saves it in an Orquestra compatible json
