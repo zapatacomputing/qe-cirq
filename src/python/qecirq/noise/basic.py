@@ -34,7 +34,7 @@ def get_asymmetric_depolarize(T_1, T_2, t_gate=10e-9):
     
     exp_1 = pow(np.e, -t_gate/(2*T_1))
     exp_2 = pow(np.e, -t_gate/T_2)
-    pz = (0.5 - p_x - 0.5*exp_1*exp_2)
+    pz = (0.5 - px - 0.5*exp_1*exp_2)
 
     noise_model = asymmetric_depolarize(p_x = px, p_y=py, p_z = pz)
     return noise_model
