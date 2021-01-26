@@ -1,6 +1,7 @@
 from cirq import (depolarize, asymmetric_depolarize, 
                   amplitude_damp, phase_damp)
 from cirq import to_json, read_json
+import numpy as np
 
 
 def get_depolarizing_channel(T, t_gate=10e-9):
