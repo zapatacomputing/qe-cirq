@@ -9,7 +9,7 @@ def get_cirq_noise_model(noise_specs: Dict):
                 noise parameters such as T1, T2 (just T in some cases) and t_gate; all the times
                 should be specified in s.
     """
-    noise_model_func = get_func_from_specs(specs)
-    noise_model = noise_model_func(**specs)
+    noise_model_func = get_func_from_specs(noise_specs)
+    noise_model = noise_model_func(**noise_specs)
     serialized_noise_model = cirq.to_json(noise_model)
     save_noise_model(serialized_noise_model, 'qecirq.noise', 'load_noise_model_from_json', 'noise-model.json')
