@@ -35,7 +35,21 @@ def get_asymmetric_depolarize(T_1, T_2, t_gate=10e-9):
     exp_2 = pow(np.e, -t_gate/T_2)
     pz = (0.5 - p_x - 0.5*exp_1*exp_2)
 
-    noise_model = asymmetric_depolarize(p_x = px, p_y=py, p_z = pz)
+    pi = 1 - px - py - pz
+    pauli_dict = {'I': pi, 'X': px, 'Y': py, 'Z': pz}
+
+    def make_error_dict_for_circuit(dict1, dict2):
+        new_dict = {}
+        for key in dict1.keys():
+            for key2 in dict2.keys():
+                if isinstance(key, str) and isinstance(key2, str):
+                    new_dict[key + key2] = dict1[key]*dict2[key2]
+        return new_dict
+    
+    pta_probabilities = make_error_dict_for_circuit(pauli_dict, pauli_dict)
+
+    # noise_model = asymmetric_depolarize(p_x = px, p_y=py, p_z = pz)
+    noise_model = asymmetric_depolarize(error_probabilities = pta_probabilities)
     to_json(noise_model, 'asymmetric_noise_model.json')
 
 def get_amplitude_damping(T_1, t_gate=10e-9):
