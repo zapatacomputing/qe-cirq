@@ -1,4 +1,4 @@
-import unittest
+import unittest 
 import numpy as np
 import os
 from pyquil import Program

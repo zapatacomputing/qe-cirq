@@ -79,19 +79,6 @@ def get_phase_damping(T_2, t_gate=10e-9):
     noise_model = phase_damp(gamma)
     return noise_model
 
-def load_noise_model(filename):
-    """Loads a cirq noise model
-
-    Args:
-        filename (string): Name of json file that contains the cirq noise model
-
-    Return
-        noise_model (cirq.NoiseModel)
-
-    """
-
-    noise_model = read_json(filename)
-    return noise_model
 
 def load_noise_model_from_json(serialized_model):
     """Loads a cirq noise model (version 2)
