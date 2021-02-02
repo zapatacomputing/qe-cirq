@@ -1,9 +1,10 @@
 from cirq import (depolarize, asymmetric_depolarize, 
                   amplitude_damp, phase_damp)
 from cirq import to_json, read_json
+import numpy as np
 
 
-def get_depolarizing_channel(T, t_gate=10e-9)):
+def get_depolarizing_channel(T, t_gate=10e-9):
     """Get the depolarizing channel
 
     Args:
@@ -12,7 +13,7 @@ def get_depolarizing_channel(T, t_gate=10e-9)):
     """
     gamma = (1 - pow(np.e, - 1/T*t_gate))
     noise_model = depolarize(gamma)
-    to_json(noise_model, 'depolarizing_noise_model.json')
+    return noise_model
 
 
 def get_asymmetric_depolarize(T_1, T_2, t_gate=10e-9):
@@ -33,7 +34,7 @@ def get_asymmetric_depolarize(T_1, T_2, t_gate=10e-9):
     
     exp_1 = pow(np.e, -t_gate/(2*T_1))
     exp_2 = pow(np.e, -t_gate/T_2)
-    pz = (0.5 - p_x - 0.5*exp_1*exp_2)
+    pz = (0.5 - px - 0.5*exp_1*exp_2)
 
     pi = 1 - px - py - pz
     pauli_dict = {'I': pi, 'X': px, 'Y': py, 'Z': pz}
@@ -50,7 +51,8 @@ def get_asymmetric_depolarize(T_1, T_2, t_gate=10e-9):
 
     # noise_model = asymmetric_depolarize(p_x = px, p_y=py, p_z = pz)
     noise_model = asymmetric_depolarize(error_probabilities = pta_probabilities)
-    to_json(noise_model, 'asymmetric_noise_model.json')
+    # to_json(noise_model, 'asymmetric_noise_model.json')
+    return noise_model
 
 def get_amplitude_damping(T_1, t_gate=10e-9):
     """ Creates an amplitude damping noise model
@@ -62,8 +64,7 @@ def get_amplitude_damping(T_1, t_gate=10e-9):
     """
     gamma = (1 - pow(np.e, - 1/T_1*t_gate))
     noise_model = amplitude_damp(gamma)
-    to_json(noise_model, 'amplitude_damping_noise_model.json')
-
+    return noise_model
 
 def get_phase_damping(T_2, t_gate=10e-9):
     """ Creates a dephasing noise model
@@ -76,8 +77,7 @@ def get_phase_damping(T_2, t_gate=10e-9):
 
     gamma = (1 - pow(np.e, - 1/T_2*t_gate))
     noise_model = phase_damp(gamma)
-    to_json(noise_model, 'phase_damping_noise_model.json')
-
+    return noise_model
 
 def load_noise_model(filename):
     """Loads a cirq noise model
@@ -93,6 +93,16 @@ def load_noise_model(filename):
     noise_model = read_json(filename)
     return noise_model
 
+def load_noise_model_from_json(serialized_model):
+    """Loads a cirq noise model (version 2)
 
+    Args:
+        serialized_model (string): json str representation of a cirq noise model
 
+    Return
+        noise_model (cirq.NoiseModel)
 
+    """
+
+    noise_model = read_json(json_text = serialized_model)
+    return noise_model
