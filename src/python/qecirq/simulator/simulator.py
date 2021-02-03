@@ -15,11 +15,13 @@ from zquantum.core.estimator import get_context_selection_circuit
 from cirq import Circuit, measure, Simulator, measure_each
 from cirq import DensityMatrixSimulator
 from cirq import generalized_amplitude_damp
-
-
+from pyquil.wavefunction import Wavefunction
+import sys
 
 
 class CirqSimulator(QuantumSimulator):
+    supports_batching = True
+    batch_size = sys.maxsize
     def __init__(
         self,
         n_samples=None,
@@ -37,10 +39,8 @@ class CirqSimulator(QuantumSimulator):
         Returns:
             qecirq.backend.CirqSimulator
         """
-        self.n_samples = n_samples
+        super().__init__(n_samples)
         self.noise_model = noise_model
-        self.num_circuits_run = 0
-        self.num_jobs_run = 0
         if self.noise_model is not None:
             self.simulator = DensityMatrixSimulator(dtype = np.complex128)
         else:
@@ -54,8 +54,7 @@ class CirqSimulator(QuantumSimulator):
         Returns:
             a list of bitstrings (a list of tuples)
         """
-        self.num_circuits_run += 1
-        self.num_jobs_run += 1
+        super().run_circuit_and_measure(circuit)
         num_qubits = len(circuit.qubits)
         cirq_circuit = circuit.to_cirq()
         if self.noise_model is not None:
@@ -78,6 +77,7 @@ class CirqSimulator(QuantumSimulator):
         Returns:
             a list of lists of bitstrings (a list of lists of tuples)
         """
+        super().run_circuitset_and_measure(circuitset)
         cirq_circuitset = []
         measurements_set = []
         qubit_listset = []
@@ -109,13 +109,10 @@ class CirqSimulator(QuantumSimulator):
             zquantum.core.measurement.ExpectationValues: the expectation values
                 of each term in the operator
         """
-        self.num_circuits_run += 1
-        self.num_jobs_run += 1
-
         if self.noise_model is not None:
             return self.get_exact_noisy_expectation_values(circuit, qubit_operator, **kwargs)
         else:
-            wavefunction = self.get_wavefunction(circuit)
+            wavefunction = self.get_wavefunction(circuit).amplitudes
             n_qubits = len(circuit.qubits)
 
             # Pyquil does not support PauliSums with no terms.
@@ -168,12 +165,13 @@ class CirqSimulator(QuantumSimulator):
         Args:
             circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
         Returns:
-            wavefunction (ndarray): The wavefunction representing the circuit
+            wavefunction (pyquil.wavefuntion.Wavefunction): The wavefunction representing the circuit
         """
+        super().get_wavefunction(circuit)
 
-        wavefunction = circuit.to_cirq().final_state_vector()
+        amplitudes = circuit.to_cirq().final_state_vector()
  
-        return wavefunction
+        return Wavefunction(amplitudes)
 
 def get_measurement_from_cirq_result_object(result_object, qubits):
     """Gets measurement bit strings from cirq result object and returns a Measurement object
