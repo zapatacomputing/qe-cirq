@@ -20,6 +20,5 @@ setuptools.setup(
     ),
     install_requires=[
         "z-quantum-core",
-        "cirq==0.9.0",
     ],
 )
