@@ -3,7 +3,7 @@ from itertools import cycle
 from openfermion.ops import QubitOperator, IsingOperator
 from openfermion import get_sparse_operator
 
-from zquantum.core.openfermion import expectation, change_operator_type
+from zquantum.core.openfermion import change_operator_type
 from zquantum.core.interfaces.backend import QuantumSimulator
 from zquantum.core.measurement import (
     expectation_values_to_real,
@@ -46,7 +46,7 @@ class CirqSimulator(QuantumSimulator):
         else:
             self.simulator = Simulator()
 
-    def run_circuit_and_measure(self, circuit, **kwargs):
+    def run_circuit_and_measure(self, circuit, n_samples=None, **kwargs):
         """ Run a circuit and measure a certain number of bitstrings. Note: the
         number of bitstrings measured is derived from self.n_samples
         Args:
@@ -55,6 +55,8 @@ class CirqSimulator(QuantumSimulator):
             a list of bitstrings (a list of tuples)
         """
         super().run_circuit_and_measure(circuit)
+        if n_samples is None:
+            n_samples = self.n_samples
         num_qubits = len(circuit.qubits)
         cirq_circuit = circuit.to_cirq()
         if self.noise_model is not None:
@@ -64,12 +66,12 @@ class CirqSimulator(QuantumSimulator):
         for i in range(0, len(qubits)):
             cirq_circuit.append(measure_each(qubits[i]))
 
-        result_object = self.simulator.run(cirq_circuit, repetitions = self.n_samples)
+        result_object = self.simulator.run(cirq_circuit, repetitions = n_samples)
         measurement = get_measurement_from_cirq_result_object(result_object, qubits)
 
         return measurement
 
-    def run_circuitset_and_measure(self, circuitset, **kwargs):
+    def run_circuitset_and_measure(self, circuitset, n_samples=None, **kwargs):
         """ Run a set of circuits and measure a certain number of bitstrings.
         Note: the number of bitstrings measured is derived from self.n_samples
         Args:
@@ -78,6 +80,9 @@ class CirqSimulator(QuantumSimulator):
             a list of lists of bitstrings (a list of lists of tuples)
         """
         super().run_circuitset_and_measure(circuitset)
+
+        if n_samples is None:
+            n_samples = [self.n_samples for circuit in circuitset]
         cirq_circuitset = []
         measurements_set = []
         qubit_listset = []
@@ -91,7 +96,7 @@ class CirqSimulator(QuantumSimulator):
                 cirq_circuit.append(measure_each(qubits[i]))
             cirq_circuitset.append(cirq_circuit)
             qubit_listset.append(qubits)
-        result = self.simulator.run_batch(cirq_circuitset, repetitions= self.n_samples)
+        result = self.simulator.run_batch(cirq_circuitset, repetitions= n_samples)
 
         for i in range(len(cirq_circuitset)):
             measurements = get_measurement_from_cirq_result_object(result[i][0], qubit_listset[i])

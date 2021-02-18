@@ -40,91 +40,92 @@ def wf_simulator(request):
 def sampling_simulator(request):
     return CirqSimulator()
 
-class TestCirqSimulator(QuantumSimulatorTests):
-    pass
-    # def setUp(self):
-    #     self.n_samples = 100
-    #     self.simulator = CirqSimulator(n_samples=self.n_samples)
+# class TestCirqSimulator(QuantumSimulatorTests):
+   
 
-    # def test_setup_basic_simulators(self):
-    #     simulator = CirqSimulator()
-    #     self.assertIsInstance(simulator, CirqSimulator)
-    #     self.assertEqual(simulator.n_samples, None)
-    #     self.assertEqual(simulator.noise_model, None)
+#     def test_setup_basic_simulators(self):
+#         simulator = CirqSimulator()
+#         assert isinstance(simulator, CirqSimulator)
+#         assert simulator.n_samples is None
+#         assert simulator.noise_model is  None
     
-    # def test_run_circuit_and_measure(self):
-    #     # Given
-    #     circuit = Circuit(Program(X(0), CNOT(1, 2)))
-    #     simulator = CirqSimulator(n_samples=self.n_samples)
-    #     measurements = simulator.run_circuit_and_measure(circuit)
-    #     self.assertEqual(len(measurements.bitstrings), self.n_samples)
+#     def test_run_circuit_and_measure(self):
+#         # Given
+#         circuit = Circuit(Program(X(0), CNOT(1, 2)))
+#         simulator = CirqSimulator(n_samples=100)
+#         measurements = simulator.run_circuit_and_measure(circuit)
+#         assert len(measurements.bitstrings) == 100
 
-    #     for measurement in measurements.bitstrings:
-    #         self.assertEqual(measurement, (1, 0, 0))
+#         for measurement in measurements.bitstrings:
+#             assert measurement ==  (1, 0, 0)
     
-    # def test_run_circuitset_and_measure(self):
+#     def test_run_circuitset_and_measure(self):
 
-    #         #Given
-    #         simulator = CirqSimulator(n_samples=self.n_samples)
-    #         circuit = Circuit(Program(X(0), CNOT(1, 2)))
-    #         n_circuits = 5
-    #         # When
-    #         measurements_set = simulator.run_circuitset_and_measure([circuit] * n_circuits)
-    #         # Then
-    #         self.assertEqual(len(measurements_set), n_circuits)
-    #         for measurements in measurements_set:
-    #             self.assertEqual(len(measurements.bitstrings), self.n_samples)
-    #             for measurement in measurements.bitstrings:
-    #                 self.assertEqual(measurement, (1, 0, 0))
+#             #Given
+#             simulator = CirqSimulator(n_samples=100)
+#             circuit = Circuit(Program(X(0), CNOT(1, 2)))
+#             n_circuits = 5
+#             n_samples= 100
+#             # When
+#             measurements_set = simulator.run_circuitset_and_measure([circuit] * n_circuits)
+#             # Then
+#             assert len(measurements_set) == n_circuits
+#             for measurements in measurements_set:
+#                 assert len(measurements.bitstrings) == n_samples
+#                 for measurement in measurements.bitstrings:
+#                     assert measurement == (1, 0, 0)
 
-    # def test_get_wavefunction(self):
-    #     # Given
-    #     simulator = CirqSimulator(n_samples=self.n_samples)
-    #     circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+#     def test_get_wavefunction(self):
+#         # Given
+#         simulator = CirqSimulator(n_samples=100)
+#         circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
 
-    #     # When
-    #     wavefunction = simulator.get_wavefunction(circuit)
-    #     # Then
-    #     self.assertIsInstance(wavefunction, np.ndarray)
-    #     self.assertEqual(len(wavefunction), 8)
-    #     self.assertAlmostEqual(wavefunction[0], (1 / np.sqrt(2) + 0j))
-    #     self.assertAlmostEqual(wavefunction[7], (1 / np.sqrt(2) + 0j))
+#         # When
+#         wavefunction = simulator.get_wavefunction(circuit)
+#         # Then
+#         assert isinstance(wavefunction.amplitudes, np.ndarray)
+#         assert len(wavefunction.amplitudes)== 8
+#         assert np.isclose(wavefunction.amplitudes[0], (1 / np.sqrt(2) + 0j), atol=10e-15)
+#         assert np.isclose(wavefunction.amplitudes[7], (1 / np.sqrt(2) + 0j), atol=10e-15)
 
-    # def test_get_exact_expectation_values(self):
-    #     # Given
-    #     simulator = CirqSimulator(n_samples=self.n_samples)
-    #     circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
-    #     qubit_operator = QubitOperator("2[] - [Z0 Z1] + [X0 X2]")
-    #     target_values = np.array([2.0, -1.0, 0.0])
+#     def test_get_exact_expectation_values(self):
+#         # Given
+#         n_samples = 100
+#         simulator = CirqSimulator(n_samples=n_samples)
+#         circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+#         qubit_operator = QubitOperator("2[] - [Z0 Z1] + [X0 X2]")
+#         target_values = np.array([2.0, -1.0, 0.0])
 
-    #     # When
+#         # When
       
-    #     expectation_values = simulator.get_exact_expectation_values(
-    #         circuit, qubit_operator
-    #     )
-    #     # Then
-    #     np.testing.assert_array_almost_equal(
-    #         expectation_values.values, target_values
-    #     )
-    #     self.assertIsInstance(expectation_values.values, np.ndarray)
+#         expectation_values = simulator.get_exact_expectation_values(
+#             circuit, qubit_operator
+#         )
+#         # Then
+#         np.testing.assert_array_almost_equal(
+#             expectation_values.values, target_values
+#         )
+     
 
-    # def test_get_noisy_exact_expectation_values(self):
-    #     # Given
-    #     noise = 0.00002
-    #     noise_model = depolarize(p=noise)
-    #     simulator = CirqSimulator(noise_model =noise_model)
-    #     circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
-    #     qubit_operator = QubitOperator("-[Z0 Z1] + [X0 X2]")
-    #     target_values = np.array([ -1.0, 0.0])
+#     def test_get_noisy_exact_expectation_values(self):
+#         # Given
+#         noise = 0.0002
+#         noise_model = depolarize(p=noise)
+#         simulator = CirqSimulator(noise_model =noise_model)
+#         circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+#         qubit_operator = QubitOperator("-[Z0 Z1] + [X0 X2]")
+#         target_values = np.array([ -0.9986673775881747, 0.0])
 
-    #     expectation_values = simulator.get_exact_noisy_expectation_values(
-    #         circuit, qubit_operator
-    #     )
-    #     self.assertEqual(expectation_values.values[0], target_values[0])
+#         expectation_values = simulator.get_exact_noisy_expectation_values(
+#             circuit, qubit_operator
+#         )
+#         assert expectation_values.values[0] == target_values[0]
+#         assert expectation_values.values[1] == target_values[1]
+        
 
     
-# class TestQiskitSimulatorGates(QuantumSimulatorGatesTest):
-#     pass
+class TestCirqSimulatorGates(QuantumSimulatorGatesTest):
+    pass
 
 
         
