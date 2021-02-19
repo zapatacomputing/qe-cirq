@@ -1,12 +1,9 @@
-import unittest
 import numpy as np
-import os
-from pyquil.wavefunction import Wavefunction
 import pytest
+from cirq import depolarize
 from pyquil import Program
-from pyquil.gates import H, CNOT, RX, CZ, X
+from pyquil.gates import H, CNOT
 from openfermion.ops import QubitOperator
-
 
 from zquantum.core.circuit import Circuit
 from zquantum.core.interfaces.backend_test import (
@@ -15,16 +12,6 @@ from zquantum.core.interfaces.backend_test import (
 )
 
 from .simulator import CirqSimulator
-
-from cirq import (
-    depolarize,
-    asymmetric_depolarize,
-    generalized_amplitude_damp,
-    amplitude_damp,
-    phase_damp,
-    phase_flip,
-    bit_flip,
-)
 
 
 @pytest.fixture(
@@ -130,5 +117,5 @@ class TestCirqSimulator(QuantumSimulatorTests):
         assert expectation_values.values[1] == target_values[1]
 
 
-# class TestCirqSimulatorGates(QuantumSimulatorGatesTest):
-#     pass
+class TestCirqSimulatorGates(QuantumSimulatorGatesTest):
+    pass
