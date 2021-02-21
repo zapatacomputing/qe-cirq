@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from cirq import depolarize
 from pyquil import Program
-from pyquil.gates import H, CNOT
+from pyquil.gates import X, H, CNOT
 from openfermion.ops import QubitOperator
 
 from zquantum.core.circuit import Circuit

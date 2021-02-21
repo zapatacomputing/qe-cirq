@@ -208,10 +208,9 @@ def get_measurement_from_cirq_result_object(result_object, qubits):
 
     keys = list(range(len(qubits)))
 
-    numpy_samples = []
-    for sub_key in keys:
-        if sub_key in result_object._measurements.keys():
-            numpy_samples.append(zip(*(result_object._measurements[str(sub_key)])))
+    numpy_samples = list(
+        zip(*(result_object._measurements.get(str(sub_key), 0) for sub_key in keys))
+    )
 
     samples = []
     for numpy_bitstring in numpy_samples:
