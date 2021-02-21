@@ -1,21 +1,16 @@
 from typing import Iterable
 import numpy as np
-from itertools import cycle
-from openfermion.ops import QubitOperator, IsingOperator
 from openfermion import get_sparse_operator
 
-from zquantum.core.openfermion import change_operator_type
 from zquantum.core.interfaces.backend import QuantumSimulator
 from zquantum.core.measurement import (
     expectation_values_to_real,
     ExpectationValues,
     Measurements,
 )
-from zquantum.core.estimator import get_context_selection_circuit
 
-from cirq import Circuit, measure, Simulator, measure_each
+from cirq import Simulator, measure_each
 from cirq import DensityMatrixSimulator
-from cirq import generalized_amplitude_damp
 from pyquil.wavefunction import Wavefunction
 import sys
 
@@ -68,7 +63,9 @@ class CirqSimulator(QuantumSimulator):
             cirq_circuit.append(measure_each(qubits[i]))
 
         result_object = self.simulator.run(cirq_circuit, repetitions=n_samples)
-        measurement = get_measurement_from_cirq_result_object(result_object, qubits)
+        measurement = get_measurement_from_cirq_result_object(
+            result_object, circuit.qubits, n_samples
+        )
 
         return measurement
 
@@ -84,11 +81,11 @@ class CirqSimulator(QuantumSimulator):
 
         if n_samples is None:
             n_samples = [self.n_samples for circuit in circuitset]
+        if not isinstance(n_samples, Iterable):
+            n_samples = [n_samples] * len(circuitset)
         cirq_circuitset = []
         measurements_set = []
-        qubit_listset = []
         for circuit in circuitset:
-            num_qubits = len(circuit.qubits)
             cirq_circuit = circuit.to_cirq()
             if self.noise_model is not None:
                 cirq_circuit.with_noise(self.noise_model)
@@ -96,12 +93,11 @@ class CirqSimulator(QuantumSimulator):
             for i in range(0, len(qubits)):
                 cirq_circuit.append(measure_each(qubits[i]))
             cirq_circuitset.append(cirq_circuit)
-            qubit_listset.append(qubits)
         result = self.simulator.run_batch(cirq_circuitset, repetitions=n_samples)
 
         for i in range(len(cirq_circuitset)):
             measurements = get_measurement_from_cirq_result_object(
-                result[i][0], qubit_listset[i]
+                result[i][0], circuitset[i].qubits, n_samples[i]
             )
             measurements_set.append(measurements)
 
@@ -195,7 +191,7 @@ class CirqSimulator(QuantumSimulator):
         return wavefunction
 
 
-def get_measurement_from_cirq_result_object(result_object, qubits):
+def get_measurement_from_cirq_result_object(result_object, qubits, n_samples):
     """Gets measurement bit strings from cirq result object and returns a Measurement object
 
     Args:
@@ -209,7 +205,12 @@ def get_measurement_from_cirq_result_object(result_object, qubits):
     keys = list(range(len(qubits)))
 
     numpy_samples = list(
-        zip(*(result_object._measurements.get(str(sub_key), 0) for sub_key in keys))
+        zip(
+            *(
+                result_object._measurements.get(str(sub_key), [[0]] * n_samples)
+                for sub_key in keys
+            )
+        )
     )
 
     samples = []
