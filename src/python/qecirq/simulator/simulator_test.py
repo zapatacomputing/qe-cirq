@@ -2,10 +2,10 @@ import numpy as np
 import pytest
 from cirq import depolarize
 from pyquil import Program
-from pyquil.gates import H, CNOT
+from pyquil.gates import X, H, CNOT
 from openfermion.ops import QubitOperator
 
-from zquantum.core.circuit import Circuit
+from zquantum.core.circuit import Circuit, Qubit
 from zquantum.core.interfaces.backend_test import (
     QuantumSimulatorTests,
     QuantumSimulatorGatesTest,
@@ -51,6 +51,17 @@ class TestCirqSimulator(QuantumSimulatorTests):
 
         for measurement in measurements.bitstrings:
             assert measurement == (1, 0, 0)
+
+    def test_measuring_inactive_qubits(self):
+        # Given
+        circuit = Circuit(Program(X(0), CNOT(1, 2)))
+        circuit.qubits = [Qubit(i) for i in range(4)]
+        simulator = CirqSimulator(n_samples=100)
+        measurements = simulator.run_circuit_and_measure(circuit)
+        assert len(measurements.bitstrings) == 100
+
+        for measurement in measurements.bitstrings:
+            assert measurement == (1, 0, 0, 0)
 
     def test_run_circuitset_and_measure(self):
 
