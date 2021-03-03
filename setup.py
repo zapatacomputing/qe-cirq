@@ -8,9 +8,7 @@ setuptools.setup(
     author_email="info@zapatacomputing.com",
     description="Cirq package for Orquestra.",
     url="https://github.com/zapatacomputing/qe-cirq ",
-    packages=setuptools.find_namespace_packages(
-        include=["qecirq.*"], where="src/python"
-    ),
+    packages=setuptools.find_packages(where="src/python"),
     package_dir={"": "src/python"},
     classifiers=(
         "Programming Language :: Python :: 3",
