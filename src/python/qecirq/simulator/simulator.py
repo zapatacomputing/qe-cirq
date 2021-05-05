@@ -56,7 +56,7 @@ class CirqSimulator(QuantumSimulator):
             n_samples = self.n_samples
         cirq_circuit = circuit.to_cirq()
         if self.noise_model is not None:
-            cirq_circuit.with_noise(self.noise_model)
+            cirq_circuit = cirq_circuit.with_noise(self.noise_model)
 
         qubits = list(cirq_circuit.all_qubits())
         for i in range(0, len(qubits)):
@@ -88,7 +88,7 @@ class CirqSimulator(QuantumSimulator):
         for circuit in circuitset:
             cirq_circuit = circuit.to_cirq()
             if self.noise_model is not None:
-                cirq_circuit.with_noise(self.noise_model)
+                cirq_circuit = cirq_circuit.with_noise(self.noise_model)
             qubits = list(cirq_circuit.all_qubits())
             for i in range(0, len(qubits)):
                 cirq_circuit.append(measure_each(qubits[i]))
