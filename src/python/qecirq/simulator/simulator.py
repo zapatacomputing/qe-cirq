@@ -19,6 +19,19 @@ from zquantum.core.wip.circuits import export_to_cirq, new_circuit_from_old_circ
 from zquantum.core.wip.compatibility_tools import compatible_with_old_type
 
 
+def _prepare_runnable_cirq_circuit(circuit, noise_model):
+    """Export circuit to Cirq and add terminal measurements."""
+    cirq_circuit = export_to_cirq(circuit)
+    if noise_model is not None:
+        cirq_circuit = cirq_circuit.with_noise(noise_model)
+
+    qubits = list(cirq_circuit.all_qubits())
+
+    for i in range(0, len(qubits)):
+        cirq_circuit.append(measure_each(qubits[i]))
+    return cirq_circuit
+
+
 class CirqSimulator(QuantumSimulator):
     """Simulator using a cirq device (simulator or QPU).
 
@@ -53,25 +66,24 @@ class CirqSimulator(QuantumSimulator):
         old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
     )
     def run_circuit_and_measure(self, circuit, n_samples=None, **kwargs):
-        """Run a circuit and measure a certain number of bitstrings. Note: the
-        number of bitstrings measured is derived from self.n_samples
+        """Run a circuit and measure a certain number of bitstrings.
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
+            circuit: the circuit to prepare the state.
+            n_samples: number of bitstrings to measure. If None, `self.n_samples`
+                is used.
         Returns:
-            a list of bitstrings (a list of tuples)
+            A list of bitstrings.
         """
         super().run_circuit_and_measure(circuit)
         if n_samples is None:
             n_samples = self.n_samples
-        cirq_circuit = export_to_cirq(circuit)
-        if self.noise_model is not None:
-            cirq_circuit = cirq_circuit.with_noise(self.noise_model)
 
-        qubits = list(cirq_circuit.all_qubits())
-        for i in range(0, len(qubits)):
-            cirq_circuit.append(measure_each(qubits[i]))
+        result_object = self.simulator.run(
+            _prepare_runnable_cirq_circuit(circuit, self.noise_model),
+            repetitions=n_samples
+        )
 
-        result_object = self.simulator.run(cirq_circuit, repetitions=n_samples)
         measurement = get_measurement_from_cirq_result_object(
             result_object, range(circuit.n_qubits), n_samples
         )
@@ -97,16 +109,13 @@ class CirqSimulator(QuantumSimulator):
             n_samples = [self.n_samples for circuit in circuitset]
         if not isinstance(n_samples, Iterable):
             n_samples = [n_samples] * len(circuitset)
-        cirq_circuitset = []
+
+        cirq_circuitset = [
+            _prepare_runnable_cirq_circuit(circuit, self.noise_model)
+            for circuit in circuitset
+        ]
         measurements_set = []
-        for circuit in circuitset:
-            cirq_circuit = export_to_cirq(circuit)
-            if self.noise_model is not None:
-                cirq_circuit = cirq_circuit.with_noise(self.noise_model)
-            qubits = list(cirq_circuit.all_qubits())
-            for i in range(0, len(qubits)):
-                cirq_circuit.append(measure_each(qubits[i]))
-            cirq_circuitset.append(cirq_circuit)
+
         result = self.simulator.run_batch(cirq_circuitset, repetitions=n_samples)
 
         for i in range(len(cirq_circuitset)):
