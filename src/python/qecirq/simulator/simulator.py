@@ -105,6 +105,11 @@ class CirqSimulator(QuantumSimulator):
         """
         super().run_circuitset_and_measure(circuitset)
 
+        if n_samples is None and self.n_samples is None:
+            raise ValueError(
+                "The n_samples passed to run_circuitset_and_measure and simulator's "
+                "default n_samples cannot be None at the same time"
+            )
         if n_samples is None:
             n_samples = [self.n_samples for circuit in circuitset]
         if not isinstance(n_samples, Iterable):
