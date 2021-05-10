@@ -20,6 +20,20 @@ from zquantum.core.wip.compatibility_tools import compatible_with_old_type
 
 
 class CirqSimulator(QuantumSimulator):
+    """Simulator using a cirq device (simulator or QPU).
+
+    Currently this Simulator uses cirq.Simulator if noise_model is None and
+    cirq.DensityMatrixSimulator otherwise.
+
+    Args:
+        n_samples: the number of samples to use when running the device
+        noise_model: an optional noise model to pass in for noisy simulations
+
+    Attributes:
+        n_samples: the number of samples to use when running the device
+        noise_model: an optional noise model to pass in for noisy simulations
+        simulator: Cirq simulator this class uses.
+    """
     supports_batching = True
     batch_size = sys.maxsize
 
@@ -28,17 +42,6 @@ class CirqSimulator(QuantumSimulator):
         n_samples=None,
         noise_model=None,
     ):
-        """Get a cirq device (simulator or QPU) that adheres to the
-        zquantum.core.interfaces.backend.QuantumSimulator
-        Args:
-            simulator (string):
-            device_name (string): the name of the device
-            n_samples (int): the number of samples to use when running the device
-            noise_model (qiskit.providers.aer.noise.NoiseModel): an optional #TODO: should be a cirq noise model
-                noise model to pass in for noisy simulations
-        Returns:
-            qecirq.backend.CirqSimulator
-        """
         super().__init__(n_samples)
         self.noise_model = noise_model
         if self.noise_model is not None:
