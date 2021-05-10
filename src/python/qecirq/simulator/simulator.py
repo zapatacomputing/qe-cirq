@@ -97,9 +97,13 @@ class CirqSimulator(QuantumSimulator):
     )
     def run_circuitset_and_measure(self, circuitset, n_samples=None, **kwargs):
         """Run a set of circuits and measure a certain number of bitstrings.
-        Note: the number of bitstrings measured is derived from self.n_samples
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
+            circuitset: a set of circuits to prepare the state.
+            n_samples: number of bitstrings to measure. If None, `self.n_samples`
+                is used. If an iterable, its-ith element corresponds to number
+                of samples that will be taken from i-th circuit. If an int N,
+                each circuit in circuitset will be measured N times.
         Returns:
             a list of lists of bitstrings (a list of lists of tuples)
         """
@@ -135,14 +139,13 @@ class CirqSimulator(QuantumSimulator):
         old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
     )
     def get_exact_expectation_values(self, circuit, qubit_operator, **kwargs):
-        """Run a circuit to prepare a wavefunction and measure the exact
-        expectation values with respect to a given operator.
+        """Compute exact expectation values with respect to given operator.
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
-            qubit_operator (openfermion.ops.QubitOperator): the operator to measure
+            circuit: the circuit to prepare the state
+            qubit_operator: the operator to measure
         Returns:
-            zquantum.core.measurement.ExpectationValues: the expectation values
-                of each term in the operator
+            the expectation values of each term in the operator
         """
         if self.noise_model is not None:
             return self.get_exact_noisy_expectation_values(
@@ -176,14 +179,18 @@ class CirqSimulator(QuantumSimulator):
         old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
     )
     def get_exact_noisy_expectation_values(self, circuit, qubit_operator, **kwargs):
-        """Run a circuit to prepare a wavefunction and measure the exact
-        expectation values with respect to a given operator.
+        """Compute exact expectation values w.r.t. given operator in presence of noise.
+
+        Note that this method can be used only if simulator's noise_model is not set
+        to None.
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
-            qubit_operator (openfermion.ops.QubitOperator): the operator to measure
+            circuit: the circuit to prepare the state
+            qubit_operator: the operator to measure
         Returns:
-            zquantum.core.measurement.ExpectationValues: the expectation values
-                of each term in the operator
+            the expectation values of each term in the operator
+        Raises:
+            RuntimeError if this simulator's noise_model is None.
         """
         if self.noise_model is None:
             raise RuntimeError(
@@ -214,10 +221,11 @@ class CirqSimulator(QuantumSimulator):
     )
     def get_wavefunction(self, circuit):
         """Run a circuit and get the wavefunction of the resulting statevector.
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
+            circuit: the circuit to prepare the state
         Returns:
-            wavefunction (pyquil.wavefuntion.Wavefunction): The wavefunction representing the circuit
+            wavefunction: The wavefunction representing the final state of the circuit
         """
         super().get_wavefunction(circuit)
 
@@ -228,16 +236,15 @@ class CirqSimulator(QuantumSimulator):
 
 
 def get_measurement_from_cirq_result_object(result_object, qubits, n_samples):
-    """Gets measurement bit strings from cirq result object and returns a Measurement object
+    """Extract measurement bitstrings from cirq result object.
 
     Args:
-
-
+        result_object: object returned by Cirq simulator's run or run_batch.
+        qubits: qubit indices that were measured.
+        n_samples: number of measured samples
     Return:
-        measurment (zquantum.core.measurement.Measurements)
-
+        Measurements.
     """
-
     keys = list(range(len(qubits)))
 
     numpy_samples = list(
