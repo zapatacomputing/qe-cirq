@@ -27,7 +27,6 @@ class CirqSimulator(QuantumSimulator):
         self,
         n_samples=None,
         noise_model=None,
-        **kwargs,
     ):
         """Get a cirq device (simulator or QPU) that adheres to the
         zquantum.core.interfaces.backend.QuantumSimulator
