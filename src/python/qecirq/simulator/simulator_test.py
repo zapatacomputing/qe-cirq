@@ -64,7 +64,6 @@ class TestCirqSimulator(QuantumSimulatorTests):
             assert measurement == (1, 0, 0, 0)
 
     def test_run_circuitset_and_measure(self):
-
         # Given
         simulator = CirqSimulator(n_samples=100)
         circuit = Circuit(Program(X(0), CNOT(1, 2)))

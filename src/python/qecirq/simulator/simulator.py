@@ -45,14 +45,11 @@ class CirqSimulator(QuantumSimulator):
         noise_model: an optional noise model to pass in for noisy simulations
         simulator: Cirq simulator this class uses.
     """
+
     supports_batching = True
     batch_size = sys.maxsize
 
-    def __init__(
-        self,
-        n_samples=None,
-        noise_model=None,
-    ):
+    def __init__(self, n_samples=None, noise_model=None):
         super().__init__(n_samples)
         self.noise_model = noise_model
         if self.noise_model is not None:
@@ -79,7 +76,7 @@ class CirqSimulator(QuantumSimulator):
 
         result_object = self.simulator.run(
             _prepare_measurable_cirq_circuit(circuit, self.noise_model),
-            repetitions=n_samples
+            repetitions=n_samples,
         )
 
         measurement = get_measurement_from_cirq_result_object(
@@ -91,9 +88,11 @@ class CirqSimulator(QuantumSimulator):
     @compatible_with_old_type(
         old_type=OldCircuit,
         translate_old_to_wip=new_circuit_from_old_circuit,
-        consider_iterable_types=[list, tuple]
+        consider_iterable_types=[list, tuple],
     )
-    def run_circuitset_and_measure(self, circuitset, n_samples: Optional[List[int]] = None, **kwargs):
+    def run_circuitset_and_measure(
+        self, circuitset, n_samples: Optional[List[int]] = None, **kwargs
+    ):
         """Run a set of circuits and measure a certain number of bitstrings.
 
         Args:
@@ -121,7 +120,6 @@ class CirqSimulator(QuantumSimulator):
             _prepare_measurable_cirq_circuit(circuit, self.noise_model)
             for circuit in circuitset
         ]
-        measurements_set = []
 
         result = self.simulator.run_batch(cirq_circuitset, repetitions=n_samples)
 
@@ -244,8 +242,6 @@ def get_measurement_from_cirq_result_object(result_object, n_qubits, n_samples):
     Return:
         Measurements.
     """
-    keys = list(range(len(qubits)))
-
     numpy_samples = list(
         zip(
             *(
@@ -270,7 +266,8 @@ def _flip_bits(n, num_bits):
 def flip_wavefunction(wavefunction: Wavefunction):
     number_of_states = len(wavefunction.amplitudes)
     ordering = [
-        _flip_bits(n, number_of_states.bit_length()-1) for n in range(number_of_states)
+        _flip_bits(n, number_of_states.bit_length() - 1)
+        for n in range(number_of_states)
     ]
     flipped_amplitudes = [wavefunction.amplitudes[i] for i in ordering]
     return Wavefunction(np.array(flipped_amplitudes))
