@@ -83,7 +83,7 @@ class CirqSimulator(QuantumSimulator):
         )
 
         measurement = get_measurement_from_cirq_result_object(
-            result_object, range(circuit.n_qubits), n_samples
+            result_object, circuit.n_qubits, n_samples
         )
 
         return measurement
@@ -125,11 +125,12 @@ class CirqSimulator(QuantumSimulator):
 
         result = self.simulator.run_batch(cirq_circuitset, repetitions=n_samples)
 
-        for i in range(len(cirq_circuitset)):
-            measurements = get_measurement_from_cirq_result_object(
-                result[i][0], range(circuitset[i].n_qubits), n_samples[i]
+        measurements_set = [
+            get_measurement_from_cirq_result_object(
+                sub_result[0], circuit.n_qubits, num_samples
             )
-            measurements_set.append(measurements)
+            for sub_result, circuit, num_samples in zip(result, circuitset, n_samples)
+        ]
 
         return measurements_set
 
@@ -233,12 +234,12 @@ class CirqSimulator(QuantumSimulator):
         return wavefunction
 
 
-def get_measurement_from_cirq_result_object(result_object, qubits, n_samples):
+def get_measurement_from_cirq_result_object(result_object, n_qubits, n_samples):
     """Extract measurement bitstrings from cirq result object.
 
     Args:
         result_object: object returned by Cirq simulator's run or run_batch.
-        qubits: qubit indices that were measured.
+        n_qubits: number of qubits in full circuit (before exporting to cirq).
         n_samples: number of measured samples
     Return:
         Measurements.
@@ -248,22 +249,17 @@ def get_measurement_from_cirq_result_object(result_object, qubits, n_samples):
     numpy_samples = list(
         zip(
             *(
-                result_object._measurements.get(str(sub_key), [[0]] * n_samples)
-                for sub_key in keys
+                result_object.measurements.get(str(sub_key), [[0]] * n_samples)
+                for sub_key in range(n_qubits)
             )
         )
     )
 
-    samples = []
-    for numpy_bitstring in numpy_samples:
-        bitstrings = []
-        for key in numpy_bitstring:
-            bitstrings.append(key[0])
-        samples.append(tuple(bitstrings))
+    samples = [
+        tuple(key[0] for key in numpy_bitstring) for numpy_bitstring in numpy_samples
+    ]
 
-    measurement = Measurements()
-    measurement.bitstrings = samples
-
+    measurement = Measurements(samples)
     return measurement
 
 
