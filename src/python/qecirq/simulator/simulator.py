@@ -271,10 +271,13 @@ def get_measurement_from_cirq_result_object(result_object, qubits, n_samples):
 
 def flip_wavefunction(wavefunction: Wavefunction):
     number_of_states = len(wavefunction.amplitudes)
-    flipped_amplitudes = [None] * number_of_states
-    for index in range(number_of_states):
-        flipped_index = int(
-            "0b" + bin(int(index))[2:].zfill(int(np.log2(number_of_states)))[::-1], 2
-        )
-        flipped_amplitudes[flipped_index] = wavefunction.amplitudes[index]
-    return Wavefunction(flipped_amplitudes)
+    flipped_amplitudes = [
+        wavefunction.amplitudes[
+            int(
+                "0b" + bin(int(index))[2:].zfill(int(np.log2(number_of_states)))[::-1],
+                2
+            )
+        ]
+        for index in range(len(wavefunction.amplitudes))
+    ]
+    return Wavefunction(np.array(flipped_amplitudes))
