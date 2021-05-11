@@ -1,4 +1,4 @@
-from typing import Iterable, Optional, List
+from typing import Optional, List
 import numpy as np
 from openfermion import get_sparse_operator
 
@@ -115,7 +115,7 @@ class CirqSimulator(QuantumSimulator):
                 "default n_samples cannot be None at the same time"
             )
         if n_samples is None:
-            n_samples = [self.n_samples for circuit in circuitset]
+            n_samples = [self.n_samples for _circuit in circuitset]
         if not isinstance(n_samples, list):
             n_samples = [n_samples] * len(circuitset)
 
@@ -178,7 +178,7 @@ class CirqSimulator(QuantumSimulator):
     @compatible_with_old_type(
         old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
     )
-    def get_exact_noisy_expectation_values(self, circuit, qubit_operator, **kwargs):
+    def get_exact_noisy_expectation_values(self, circuit, qubit_operator):
         """Compute exact expectation values w.r.t. given operator in presence of noise.
 
         Note that this method can be used only if simulator's noise_model is not set
