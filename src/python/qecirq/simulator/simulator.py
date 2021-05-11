@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Optional, List
 import numpy as np
 from openfermion import get_sparse_operator
 
@@ -95,7 +95,7 @@ class CirqSimulator(QuantumSimulator):
         translate_old_to_wip=new_circuit_from_old_circuit,
         consider_iterable_types=[list, tuple]
     )
-    def run_circuitset_and_measure(self, circuitset, n_samples=None, **kwargs):
+    def run_circuitset_and_measure(self, circuitset, n_samples: Optional[List[int]] = None, **kwargs):
         """Run a set of circuits and measure a certain number of bitstrings.
 
         Args:
@@ -116,7 +116,7 @@ class CirqSimulator(QuantumSimulator):
             )
         if n_samples is None:
             n_samples = [self.n_samples for circuit in circuitset]
-        if not isinstance(n_samples, Iterable):
+        if not isinstance(n_samples, list):
             n_samples = [n_samples] * len(circuitset)
 
         cirq_circuitset = [
