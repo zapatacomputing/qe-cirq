@@ -9,8 +9,7 @@ from zquantum.core.measurement import (
     Measurements,
 )
 
-from cirq import Simulator, measure_each
-from cirq import DensityMatrixSimulator
+import cirq
 from pyquil.wavefunction import Wavefunction
 import sys
 
@@ -19,16 +18,15 @@ from zquantum.core.wip.circuits import export_to_cirq, new_circuit_from_old_circ
 from zquantum.core.wip.compatibility_tools import compatible_with_old_type
 
 
-def _prepare_runnable_cirq_circuit(circuit, noise_model):
+def _prepare_measurable_cirq_circuit(circuit, noise_model):
     """Export circuit to Cirq and add terminal measurements."""
     cirq_circuit = export_to_cirq(circuit)
+
     if noise_model is not None:
         cirq_circuit = cirq_circuit.with_noise(noise_model)
 
-    qubits = list(cirq_circuit.all_qubits())
+    cirq_circuit.append(cirq.measure_each(*cirq_circuit.all_qubits()))
 
-    for i in range(0, len(qubits)):
-        cirq_circuit.append(measure_each(qubits[i]))
     return cirq_circuit
 
 
@@ -58,9 +56,9 @@ class CirqSimulator(QuantumSimulator):
         super().__init__(n_samples)
         self.noise_model = noise_model
         if self.noise_model is not None:
-            self.simulator = DensityMatrixSimulator(dtype=np.complex128)
+            self.simulator = cirq.DensityMatrixSimulator(dtype=np.complex128)
         else:
-            self.simulator = Simulator()
+            self.simulator = cirq.Simulator()
 
     @compatible_with_old_type(
         old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
@@ -80,7 +78,7 @@ class CirqSimulator(QuantumSimulator):
             n_samples = self.n_samples
 
         result_object = self.simulator.run(
-            _prepare_runnable_cirq_circuit(circuit, self.noise_model),
+            _prepare_measurable_cirq_circuit(circuit, self.noise_model),
             repetitions=n_samples
         )
 
@@ -120,7 +118,7 @@ class CirqSimulator(QuantumSimulator):
             n_samples = [n_samples] * len(circuitset)
 
         cirq_circuitset = [
-            _prepare_runnable_cirq_circuit(circuit, self.noise_model)
+            _prepare_measurable_cirq_circuit(circuit, self.noise_model)
             for circuit in circuitset
         ]
         measurements_set = []
