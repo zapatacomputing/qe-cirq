@@ -14,5 +14,5 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ),
-    install_requires=["z-quantum-core", "openfermion==1.0.0", "cirq==0.9.1"],
+    install_requires=["z-quantum-core"],
 )
