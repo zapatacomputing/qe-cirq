@@ -23,6 +23,7 @@ class CirqSimulator(QuantumSimulator):
         self,
         n_samples=None,
         noise_model=None,
+        seed=None,
         **kwargs,
     ):
         """Get a cirq device (simulator or QPU) that adheres to the
@@ -39,9 +40,9 @@ class CirqSimulator(QuantumSimulator):
         super().__init__(n_samples)
         self.noise_model = noise_model
         if self.noise_model is not None:
-            self.simulator = DensityMatrixSimulator(dtype=np.complex128)
+            self.simulator = DensityMatrixSimulator(dtype=np.complex128, seed=seed)
         else:
-            self.simulator = Simulator()
+            self.simulator = Simulator(seed=seed)
 
     def run_circuit_and_measure(self, circuit, n_samples=None, **kwargs):
         """Run a circuit and measure a certain number of bitstrings. Note: the
