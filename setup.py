@@ -14,5 +14,5 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
     ),
-    install_requires=["z-quantum-core", "cirq<=0.10.0"],
+    install_requires=["z-quantum-core", "cirq==0.9.1"],
 )
