@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Optional, List
 import numpy as np
 from openfermion import get_sparse_operator
 
@@ -9,109 +9,140 @@ from zquantum.core.measurement import (
     Measurements,
 )
 
-from cirq import Simulator, measure_each
-from cirq import DensityMatrixSimulator
+import cirq
 from pyquil.wavefunction import Wavefunction
 import sys
 
+from zquantum.core.circuit import Circuit as OldCircuit
+from zquantum.core.wip.circuits import export_to_cirq, new_circuit_from_old_circuit
+from zquantum.core.wip.compatibility_tools import compatible_with_old_type
+
+
+def _prepare_measurable_cirq_circuit(circuit, noise_model):
+    """Export circuit to Cirq and add terminal measurements."""
+    cirq_circuit = export_to_cirq(circuit)
+
+    if noise_model is not None:
+        cirq_circuit = cirq_circuit.with_noise(noise_model)
+
+    cirq_circuit.append(cirq.measure_each(*cirq_circuit.all_qubits()))
+
+    return cirq_circuit
+
 
 class CirqSimulator(QuantumSimulator):
+    """Simulator using a cirq device (simulator or QPU).
+
+    Currently this Simulator uses cirq.Simulator if noise_model is None and
+    cirq.DensityMatrixSimulator otherwise.
+
+    Args:
+        n_samples: the number of samples to use when running the device
+        noise_model: an optional noise model to pass in for noisy simulations
+
+    Attributes:
+        n_samples: the number of samples to use when running the device
+        noise_model: an optional noise model to pass in for noisy simulations
+        simulator: Cirq simulator this class uses.
+    """
+
     supports_batching = True
     batch_size = sys.maxsize
 
-    def __init__(
-        self,
-        n_samples=None,
-        noise_model=None,
-        **kwargs,
-    ):
-        """Get a cirq device (simulator or QPU) that adheres to the
-        zquantum.core.interfaces.backend.QuantumSimulator
-        Args:
-            simulator (string):
-            device_name (string): the name of the device
-            n_samples (int): the number of samples to use when running the device
-            noise_model (qiskit.providers.aer.noise.NoiseModel): an optional #TODO: should be a cirq noise model
-                noise model to pass in for noisy simulations
-        Returns:
-            qecirq.backend.CirqSimulator
-        """
+    def __init__(self, n_samples=None, noise_model=None):
         super().__init__(n_samples)
         self.noise_model = noise_model
         if self.noise_model is not None:
-            self.simulator = DensityMatrixSimulator(dtype=np.complex128)
+            self.simulator = cirq.DensityMatrixSimulator(dtype=np.complex128)
         else:
-            self.simulator = Simulator()
+            self.simulator = cirq.Simulator()
 
+    @compatible_with_old_type(
+        old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
+    )
     def run_circuit_and_measure(self, circuit, n_samples=None, **kwargs):
-        """Run a circuit and measure a certain number of bitstrings. Note: the
-        number of bitstrings measured is derived from self.n_samples
+        """Run a circuit and measure a certain number of bitstrings.
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
+            circuit: the circuit to prepare the state.
+            n_samples: number of bitstrings to measure. If None, `self.n_samples`
+                is used.
         Returns:
-            a list of bitstrings (a list of tuples)
+            A list of bitstrings.
         """
         super().run_circuit_and_measure(circuit)
         if n_samples is None:
             n_samples = self.n_samples
-        cirq_circuit = circuit.to_cirq()
-        if self.noise_model is not None:
-            cirq_circuit = cirq_circuit.with_noise(self.noise_model)
 
-        qubits = list(cirq_circuit.all_qubits())
-        for i in range(0, len(qubits)):
-            cirq_circuit.append(measure_each(qubits[i]))
+        result_object = self.simulator.run(
+            _prepare_measurable_cirq_circuit(circuit, self.noise_model),
+            repetitions=n_samples,
+        )
 
-        result_object = self.simulator.run(cirq_circuit, repetitions=n_samples)
         measurement = get_measurement_from_cirq_result_object(
-            result_object, circuit.qubits, n_samples
+            result_object, circuit.n_qubits, n_samples
         )
 
         return measurement
 
-    def run_circuitset_and_measure(self, circuitset, n_samples=None, **kwargs):
+    @compatible_with_old_type(
+        old_type=OldCircuit,
+        translate_old_to_wip=new_circuit_from_old_circuit,
+        consider_iterable_types=[list, tuple],
+    )
+    def run_circuitset_and_measure(
+        self, circuitset, n_samples: Optional[List[int]] = None, **kwargs
+    ):
         """Run a set of circuits and measure a certain number of bitstrings.
-        Note: the number of bitstrings measured is derived from self.n_samples
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
+            circuitset: a set of circuits to prepare the state.
+            n_samples: number of bitstrings to measure. If None, `self.n_samples`
+                is used. If an iterable, its-ith element corresponds to number
+                of samples that will be taken from i-th circuit. If an int N,
+                each circuit in circuitset will be measured N times.
         Returns:
             a list of lists of bitstrings (a list of lists of tuples)
         """
         super().run_circuitset_and_measure(circuitset)
 
+        if n_samples is None and self.n_samples is None:
+            raise ValueError(
+                "The n_samples passed to run_circuitset_and_measure and simulator's "
+                "default n_samples cannot be None at the same time"
+            )
         if n_samples is None:
-            n_samples = [self.n_samples for circuit in circuitset]
-        if not isinstance(n_samples, Iterable):
+            n_samples = [self.n_samples for _circuit in circuitset]
+        if not isinstance(n_samples, list):
             n_samples = [n_samples] * len(circuitset)
-        cirq_circuitset = []
-        measurements_set = []
-        for circuit in circuitset:
-            cirq_circuit = circuit.to_cirq()
-            if self.noise_model is not None:
-                cirq_circuit = cirq_circuit.with_noise(self.noise_model)
-            qubits = list(cirq_circuit.all_qubits())
-            for i in range(0, len(qubits)):
-                cirq_circuit.append(measure_each(qubits[i]))
-            cirq_circuitset.append(cirq_circuit)
+
+        cirq_circuitset = [
+            _prepare_measurable_cirq_circuit(circuit, self.noise_model)
+            for circuit in circuitset
+        ]
+
         result = self.simulator.run_batch(cirq_circuitset, repetitions=n_samples)
 
-        for i in range(len(cirq_circuitset)):
-            measurements = get_measurement_from_cirq_result_object(
-                result[i][0], circuitset[i].qubits, n_samples[i]
+        measurements_set = [
+            get_measurement_from_cirq_result_object(
+                sub_result[0], circuit.n_qubits, num_samples
             )
-            measurements_set.append(measurements)
+            for sub_result, circuit, num_samples in zip(result, circuitset, n_samples)
+        ]
 
         return measurements_set
 
+    @compatible_with_old_type(
+        old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
+    )
     def get_exact_expectation_values(self, circuit, qubit_operator, **kwargs):
-        """Run a circuit to prepare a wavefunction and measure the exact
-        expectation values with respect to a given operator.
+        """Compute exact expectation values with respect to given operator.
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
-            qubit_operator (openfermion.ops.QubitOperator): the operator to measure
+            circuit: the circuit to prepare the state
+            qubit_operator: the operator to measure
         Returns:
-            zquantum.core.measurement.ExpectationValues: the expectation values
-                of each term in the operator
+            the expectation values of each term in the operator
         """
         if self.noise_model is not None:
             return self.get_exact_noisy_expectation_values(
@@ -119,7 +150,6 @@ class CirqSimulator(QuantumSimulator):
             )
         else:
             wavefunction = self.get_wavefunction(circuit).amplitudes
-            n_qubits = len(circuit.qubits)
 
             # Pyquil does not support PauliSums with no terms.
             if len(qubit_operator.terms) == 0:
@@ -129,7 +159,7 @@ class CirqSimulator(QuantumSimulator):
 
             for pauli_term in qubit_operator:
                 sparse_pauli_term_ndarray = get_sparse_operator(
-                    pauli_term, n_qubits=n_qubits
+                    pauli_term, n_qubits=circuit.n_qubits
                 ).toarray()
                 if np.size(sparse_pauli_term_ndarray) == 1:
                     expectation_value = sparse_pauli_term_ndarray[0][0]
@@ -142,27 +172,34 @@ class CirqSimulator(QuantumSimulator):
 
             return expectation_values_to_real(ExpectationValues(np.asarray(values)))
 
-    def get_exact_noisy_expectation_values(self, circuit, qubit_operator, **kwargs):
-        """Run a circuit to prepare a wavefunction and measure the exact
-        expectation values with respect to a given operator.
+    @compatible_with_old_type(
+        old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
+    )
+    def get_exact_noisy_expectation_values(self, circuit, qubit_operator):
+        """Compute exact expectation values w.r.t. given operator in presence of noise.
+
+        Note that this method can be used only if simulator's noise_model is not set
+        to None.
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
-            qubit_operator (openfermion.ops.QubitOperator): the operator to measure
+            circuit: the circuit to prepare the state
+            qubit_operator: the operator to measure
         Returns:
-            zquantum.core.measurement.ExpectationValues: the expectation values
-                of each term in the operator
+            the expectation values of each term in the operator
+        Raises:
+            RuntimeError if this simulator's noise_model is None.
         """
         if self.noise_model is None:
             raise RuntimeError(
                 "Please provide noise model to get exact noisy expectation values"
             )
         else:
-            cirq_circuit = circuit.to_cirq()
+            cirq_circuit = export_to_cirq(circuit)
             values = []
-            n_qubits = len(circuit.qubits)
+
             for pauli_term in qubit_operator:
                 sparse_pauli_term_ndarray = get_sparse_operator(
-                    pauli_term, n_qubits=n_qubits
+                    pauli_term, n_qubits=circuit.n_qubits
                 ).toarray()
                 if np.size(sparse_pauli_term_ndarray) == 1:
                     expectation_value = sparse_pauli_term_ndarray[0][0]
@@ -176,62 +213,61 @@ class CirqSimulator(QuantumSimulator):
                     values.append(expectation_value)
         return expectation_values_to_real(ExpectationValues(np.asarray(values)))
 
+    @compatible_with_old_type(
+        old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
+    )
     def get_wavefunction(self, circuit):
         """Run a circuit and get the wavefunction of the resulting statevector.
+
         Args:
-            circuit (zquantum.core.circuit.Circuit): the circuit to prepare the state
+            circuit: the circuit to prepare the state
         Returns:
-            wavefunction (pyquil.wavefuntion.Wavefunction): The wavefunction representing the circuit
+            wavefunction: The wavefunction representing the final state of the circuit
         """
         super().get_wavefunction(circuit)
 
-        amplitudes = circuit.to_cirq().final_state_vector()
+        amplitudes = export_to_cirq(circuit).final_state_vector()
         wavefunction = flip_wavefunction(Wavefunction(amplitudes))
 
         return wavefunction
 
 
-def get_measurement_from_cirq_result_object(result_object, qubits, n_samples):
-    """Gets measurement bit strings from cirq result object and returns a Measurement object
+def get_measurement_from_cirq_result_object(result_object, n_qubits, n_samples):
+    """Extract measurement bitstrings from cirq result object.
 
     Args:
-
-
+        result_object: object returned by Cirq simulator's run or run_batch.
+        n_qubits: number of qubits in full circuit (before exporting to cirq).
+        n_samples: number of measured samples
     Return:
-        measurment (zquantum.core.measurement.Measurements)
-
+        Measurements.
     """
-
-    keys = list(range(len(qubits)))
-
     numpy_samples = list(
         zip(
             *(
-                result_object._measurements.get(str(sub_key), [[0]] * n_samples)
-                for sub_key in keys
+                result_object.measurements.get(str(sub_key), [[0]] * n_samples)
+                for sub_key in range(n_qubits)
             )
         )
     )
 
-    samples = []
-    for numpy_bitstring in numpy_samples:
-        bitstrings = []
-        for key in numpy_bitstring:
-            bitstrings.append(key[0])
-        samples.append(tuple(bitstrings))
+    samples = [
+        tuple(key[0] for key in numpy_bitstring) for numpy_bitstring in numpy_samples
+    ]
 
-    measurement = Measurements()
-    measurement.bitstrings = samples
-
+    measurement = Measurements(samples)
     return measurement
+
+
+def _flip_bits(n, num_bits):
+    return int(bin(n)[2:].zfill(num_bits)[::-1], 2)
 
 
 def flip_wavefunction(wavefunction: Wavefunction):
     number_of_states = len(wavefunction.amplitudes)
-    flipped_amplitudes = [None] * number_of_states
-    for index in range(number_of_states):
-        flipped_index = int(
-            "0b" + bin(int(index))[2:].zfill(int(np.log2(number_of_states)))[::-1], 2
-        )
-        flipped_amplitudes[flipped_index] = wavefunction.amplitudes[index]
-    return Wavefunction(flipped_amplitudes)
+    ordering = [
+        _flip_bits(n, number_of_states.bit_length() - 1)
+        for n in range(number_of_states)
+    ]
+    flipped_amplitudes = [wavefunction.amplitudes[i] for i in ordering]
+    return Wavefunction(np.array(flipped_amplitudes))
