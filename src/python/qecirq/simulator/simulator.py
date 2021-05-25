@@ -49,13 +49,13 @@ class CirqSimulator(QuantumSimulator):
     supports_batching = True
     batch_size = sys.maxsize
 
-    def __init__(self, n_samples=None, noise_model=None):
+    def __init__(self, n_samples=None, noise_model=None, seed=None):
         super().__init__(n_samples)
         self.noise_model = noise_model
         if self.noise_model is not None:
-            self.simulator = cirq.DensityMatrixSimulator(dtype=np.complex128)
+            self.simulator = cirq.DensityMatrixSimulator(dtype=np.complex128, seed=seed)
         else:
-            self.simulator = cirq.Simulator()
+            self.simulator = cirq.Simulator(seed=seed)
 
     @compatible_with_old_type(
         old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit

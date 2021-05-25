@@ -126,6 +126,34 @@ class TestCirqSimulator(QuantumSimulatorTests):
         assert expectation_values.values[0] == target_values[0]
         assert expectation_values.values[1] == target_values[1]
 
+    def test_run_circuit_and_measure_seed(self):
+        # Given
+        circuit = Circuit(Program(X(0), CNOT(1, 2)))
+        simulator1 = CirqSimulator(n_samples=1000, seed=12)
+        simulator2 = CirqSimulator(n_samples=1000, seed=12)
+
+        # When
+        measurements1 = simulator1.run_circuit_and_measure(circuit)
+        measurements2 = simulator2.run_circuit_and_measure(circuit)
+
+        # Then
+        for (meas1, meas2) in zip(measurements1.bitstrings, measurements2.bitstrings):
+            assert meas1 == meas2
+
+    def test_get_wavefunction_seed(self):
+        # Given
+        circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+        simulator1 = CirqSimulator(seed=542)
+        simulator2 = CirqSimulator(seed=542)
+
+        # When
+        wavefunction1 = simulator1.get_wavefunction(circuit)
+        wavefunction2 = simulator2.get_wavefunction(circuit)
+
+        # Then
+        for (ampl1, ampl2) in zip(wavefunction1.amplitudes, wavefunction2.amplitudes):
+            assert ampl1 == ampl2
+
 
 class TestCirqSimulatorGates(QuantumSimulatorGatesTest):
     pass
