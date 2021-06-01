@@ -1,11 +1,9 @@
 import numpy as np
 import pytest
 from cirq import depolarize
-from pyquil import Program
-from pyquil.gates import X, H, CNOT
 from openfermion.ops import QubitOperator
 
-from zquantum.core.circuit import Circuit, Qubit
+from zquantum.core.circuits import Circuit, X, H, CNOT
 from zquantum.core.interfaces.backend_test import (
     QuantumSimulatorTests,
     QuantumSimulatorGatesTest,
@@ -44,7 +42,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
 
     def test_run_circuit_and_measure(self):
         # Given
-        circuit = Circuit(Program(X(0), CNOT(1, 2)))
+        circuit = Circuit([X(0), CNOT(1, 2)])
         simulator = CirqSimulator(n_samples=100)
         measurements = simulator.run_circuit_and_measure(circuit)
         assert len(measurements.bitstrings) == 100
@@ -54,8 +52,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
 
     def test_measuring_inactive_qubits(self):
         # Given
-        circuit = Circuit(Program(X(0), CNOT(1, 2)))
-        circuit.qubits = [Qubit(i) for i in range(4)]
+        circuit = Circuit([X(0), CNOT(1, 2)], n_qubits=4)
         simulator = CirqSimulator(n_samples=100)
         measurements = simulator.run_circuit_and_measure(circuit)
         assert len(measurements.bitstrings) == 100
@@ -66,7 +63,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
     def test_run_circuitset_and_measure(self):
         # Given
         simulator = CirqSimulator(n_samples=100)
-        circuit = Circuit(Program(X(0), CNOT(1, 2)))
+        circuit = Circuit([X(0), CNOT(1, 2)])
         n_circuits = 5
         n_samples = 100
         # When
@@ -81,7 +78,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
     def test_get_wavefunction(self):
         # Given
         simulator = CirqSimulator(n_samples=100)
-        circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+        circuit = Circuit([H(0), CNOT(0, 1), CNOT(1, 2)])
 
         # When
         wavefunction = simulator.get_wavefunction(circuit)
@@ -99,7 +96,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
         # Given
         n_samples = 100
         simulator = CirqSimulator(n_samples=n_samples)
-        circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+        circuit = Circuit([H(0), CNOT(0, 1), CNOT(1, 2)])
         qubit_operator = QubitOperator("2[] - [Z0 Z1] + [X0 X2]")
         target_values = np.array([2.0, -1.0, 0.0])
 
@@ -116,7 +113,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
         noise = 0.0002
         noise_model = depolarize(p=noise)
         simulator = CirqSimulator(noise_model=noise_model)
-        circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+        circuit = Circuit([H(0), CNOT(0, 1), CNOT(1, 2)])
         qubit_operator = QubitOperator("-[Z0 Z1] + [X0 X2]")
         target_values = np.array([-0.9986673775881747, 0.0])
 
@@ -128,7 +125,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
 
     def test_run_circuit_and_measure_seed(self):
         # Given
-        circuit = Circuit(Program(X(0), CNOT(1, 2)))
+        circuit = Circuit([X(0), CNOT(1, 2)])
         simulator1 = CirqSimulator(n_samples=1000, seed=12)
         simulator2 = CirqSimulator(n_samples=1000, seed=12)
 
@@ -142,7 +139,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
 
     def test_get_wavefunction_seed(self):
         # Given
-        circuit = Circuit(Program(H(0), CNOT(0, 1), CNOT(1, 2)))
+        circuit = Circuit([H(0), CNOT(0, 1), CNOT(1, 2)])
         simulator1 = CirqSimulator(seed=542)
         simulator2 = CirqSimulator(seed=542)
 

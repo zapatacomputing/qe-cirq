@@ -13,9 +13,7 @@ import cirq
 from pyquil.wavefunction import Wavefunction
 import sys
 
-from zquantum.core.circuit import Circuit as OldCircuit
-from zquantum.core.wip.circuits import export_to_cirq, new_circuit_from_old_circuit
-from zquantum.core.wip.compatibility_tools import compatible_with_old_type
+from zquantum.core.circuits import export_to_cirq, Circuit
 
 
 def _prepare_measurable_cirq_circuit(circuit, noise_model):
@@ -57,10 +55,7 @@ class CirqSimulator(QuantumSimulator):
         else:
             self.simulator = cirq.Simulator(seed=seed)
 
-    @compatible_with_old_type(
-        old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
-    )
-    def run_circuit_and_measure(self, circuit, n_samples=None, **kwargs):
+    def run_circuit_and_measure(self, circuit: Circuit, n_samples=None, **kwargs):
         """Run a circuit and measure a certain number of bitstrings.
 
         Args:
@@ -85,13 +80,8 @@ class CirqSimulator(QuantumSimulator):
 
         return measurement
 
-    @compatible_with_old_type(
-        old_type=OldCircuit,
-        translate_old_to_wip=new_circuit_from_old_circuit,
-        consider_iterable_types=[list, tuple],
-    )
     def run_circuitset_and_measure(
-        self, circuitset, n_samples: Optional[List[int]] = None, **kwargs
+        self, circuitset: List[Circuit], n_samples: Optional[List[int]] = None, **kwargs
     ):
         """Run a set of circuits and measure a certain number of bitstrings.
 
@@ -132,10 +122,7 @@ class CirqSimulator(QuantumSimulator):
 
         return measurements_set
 
-    @compatible_with_old_type(
-        old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
-    )
-    def get_exact_expectation_values(self, circuit, qubit_operator, **kwargs):
+    def get_exact_expectation_values(self, circuit: Circuit, qubit_operator, **kwargs):
         """Compute exact expectation values with respect to given operator.
 
         Args:
@@ -172,10 +159,7 @@ class CirqSimulator(QuantumSimulator):
 
             return expectation_values_to_real(ExpectationValues(np.asarray(values)))
 
-    @compatible_with_old_type(
-        old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
-    )
-    def get_exact_noisy_expectation_values(self, circuit, qubit_operator):
+    def get_exact_noisy_expectation_values(self, circuit: Circuit, qubit_operator):
         """Compute exact expectation values w.r.t. given operator in presence of noise.
 
         Note that this method can be used only if simulator's noise_model is not set
@@ -213,10 +197,7 @@ class CirqSimulator(QuantumSimulator):
                     values.append(expectation_value)
         return expectation_values_to_real(ExpectationValues(np.asarray(values)))
 
-    @compatible_with_old_type(
-        old_type=OldCircuit, translate_old_to_wip=new_circuit_from_old_circuit
-    )
-    def get_wavefunction(self, circuit):
+    def get_wavefunction(self, circuit: Circuit):
         """Run a circuit and get the wavefunction of the resulting statevector.
 
         Args:
