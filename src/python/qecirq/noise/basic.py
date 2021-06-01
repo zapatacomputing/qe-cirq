@@ -23,7 +23,7 @@ def get_depolarizing_channel(T, t_gate=10e-9):
 
 def get_asymmetric_depolarize(T_1, T_2, t_gate=10e-9):
     """Creates a noise model that does both phase and amplitude damping but in the
-        Pauli Twirling Approximation discussed the following reference
+        Pauli Twirling Approximation discussed in the following reference
         https://arxiv.org/pdf/1305.2021.pdf
 
 
