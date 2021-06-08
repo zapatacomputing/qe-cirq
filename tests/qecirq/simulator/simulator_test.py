@@ -9,7 +9,7 @@ from zquantum.core.interfaces.backend_test import (
     QuantumSimulatorGatesTest,
 )
 
-from .simulator import CirqSimulator
+from qecirq.simulator import CirqSimulator
 
 
 @pytest.fixture(

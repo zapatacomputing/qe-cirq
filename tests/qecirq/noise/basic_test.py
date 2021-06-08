@@ -1,5 +1,5 @@
 import pytest
-from .basic import (
+from qecirq.noise.basic import (
     get_depolarizing_channel,
     get_asymmetric_depolarize,
     get_amplitude_damping,
