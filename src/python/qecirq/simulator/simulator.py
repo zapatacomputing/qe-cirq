@@ -1,19 +1,17 @@
-from typing import Optional, List
-import numpy as np
-from openfermion import get_sparse_operator
-
-from zquantum.core.interfaces.backend import QuantumSimulator
-from zquantum.core.measurement import (
-    expectation_values_to_real,
-    ExpectationValues,
-    Measurements,
-)
+import sys
+from typing import List, Optional
 
 import cirq
+import numpy as np
+from openfermion import get_sparse_operator
 from pyquil.wavefunction import Wavefunction
-import sys
-
-from zquantum.core.circuits import export_to_cirq, Circuit
+from zquantum.core.circuits import Circuit, export_to_cirq
+from zquantum.core.interfaces.backend import QuantumSimulator
+from zquantum.core.measurement import (
+    ExpectationValues,
+    Measurements,
+    expectation_values_to_real,
+)
 
 
 def _prepare_measurable_cirq_circuit(circuit, noise_model):
@@ -35,11 +33,9 @@ class CirqSimulator(QuantumSimulator):
     cirq.DensityMatrixSimulator otherwise.
 
     Args:
-        n_samples: the number of samples to use when running the device
         noise_model: an optional noise model to pass in for noisy simulations
 
     Attributes:
-        n_samples: the number of samples to use when running the device
         noise_model: an optional noise model to pass in for noisy simulations
         simulator: Cirq simulator this class uses.
     """
@@ -47,8 +43,8 @@ class CirqSimulator(QuantumSimulator):
     supports_batching = True
     batch_size = sys.maxsize
 
-    def __init__(self, n_samples=None, noise_model=None, seed=None):
-        super().__init__(n_samples)
+    def __init__(self, noise_model=None, seed=None):
+        super().__init__()
         self.noise_model = noise_model
         if self.noise_model is not None:
             self.simulator = cirq.DensityMatrixSimulator(dtype=np.complex128, seed=seed)
@@ -65,9 +61,7 @@ class CirqSimulator(QuantumSimulator):
         Returns:
             A list of bitstrings.
         """
-        super().run_circuit_and_measure(circuit)
-        if n_samples is None:
-            n_samples = self.n_samples
+        super().run_circuit_and_measure(circuit, n_samples)
 
         result_object = self.simulator.run(
             _prepare_measurable_cirq_circuit(circuit, self.noise_model),
@@ -81,7 +75,7 @@ class CirqSimulator(QuantumSimulator):
         return measurement
 
     def run_circuitset_and_measure(
-        self, circuitset: List[Circuit], n_samples: Optional[List[int]] = None, **kwargs
+        self, circuitset: List[Circuit], n_samples: List[int], **kwargs
     ):
         """Run a set of circuits and measure a certain number of bitstrings.
 
@@ -94,17 +88,7 @@ class CirqSimulator(QuantumSimulator):
         Returns:
             a list of lists of bitstrings (a list of lists of tuples)
         """
-        super().run_circuitset_and_measure(circuitset)
-
-        if n_samples is None and self.n_samples is None:
-            raise ValueError(
-                "The n_samples passed to run_circuitset_and_measure and simulator's "
-                "default n_samples cannot be None at the same time"
-            )
-        if n_samples is None:
-            n_samples = [self.n_samples for _circuit in circuitset]
-        if not isinstance(n_samples, list):
-            n_samples = [n_samples] * len(circuitset)
+        super().run_circuitset_and_measure(circuitset, n_samples)
 
         cirq_circuitset = [
             _prepare_measurable_cirq_circuit(circuit, self.noise_model)
@@ -132,9 +116,7 @@ class CirqSimulator(QuantumSimulator):
             the expectation values of each term in the operator
         """
         if self.noise_model is not None:
-            return self.get_exact_noisy_expectation_values(
-                circuit, qubit_operator, **kwargs
-            )
+            return self.get_exact_noisy_expectation_values(circuit, qubit_operator)
         else:
             wavefunction = self.get_wavefunction(circuit).amplitudes
 
