@@ -2,34 +2,26 @@ import numpy as np
 import pytest
 from cirq import depolarize
 from openfermion.ops import QubitOperator
-
-from zquantum.core.circuits import Circuit, X, H, CNOT
-from zquantum.core.interfaces.backend_test import (
-    QuantumSimulatorTests,
-    QuantumSimulatorGatesTest,
-)
-
 from qecirq.simulator import CirqSimulator
-
-
-@pytest.fixture(
-    params=[
-        {
-            "n_samples": 1,
-        },
-    ]
+from zquantum.core.circuits import CNOT, Circuit, H, X
+from zquantum.core.interfaces.backend_test import (
+    QuantumSimulatorGatesTest,
+    QuantumSimulatorTests,
 )
-def backend(request):
-    return CirqSimulator(**request.param)
 
 
 @pytest.fixture()
-def wf_simulator(request):
+def backend():
     return CirqSimulator()
 
 
 @pytest.fixture()
-def sampling_simulator(request):
+def wf_simulator():
+    return CirqSimulator()
+
+
+@pytest.fixture()
+def sampling_simulator():
     return CirqSimulator()
 
 
@@ -37,14 +29,13 @@ class TestCirqSimulator(QuantumSimulatorTests):
     def test_setup_basic_simulators(self):
         simulator = CirqSimulator()
         assert isinstance(simulator, CirqSimulator)
-        assert simulator.n_samples is None
         assert simulator.noise_model is None
 
     def test_run_circuit_and_measure(self):
         # Given
         circuit = Circuit([X(0), CNOT(1, 2)])
-        simulator = CirqSimulator(n_samples=100)
-        measurements = simulator.run_circuit_and_measure(circuit)
+        simulator = CirqSimulator()
+        measurements = simulator.run_circuit_and_measure(circuit, n_samples=100)
         assert len(measurements.bitstrings) == 100
 
         for measurement in measurements.bitstrings:
@@ -53,8 +44,8 @@ class TestCirqSimulator(QuantumSimulatorTests):
     def test_measuring_inactive_qubits(self):
         # Given
         circuit = Circuit([X(0), CNOT(1, 2)], n_qubits=4)
-        simulator = CirqSimulator(n_samples=100)
-        measurements = simulator.run_circuit_and_measure(circuit)
+        simulator = CirqSimulator()
+        measurements = simulator.run_circuit_and_measure(circuit, n_samples=100)
         assert len(measurements.bitstrings) == 100
 
         for measurement in measurements.bitstrings:
@@ -62,12 +53,14 @@ class TestCirqSimulator(QuantumSimulatorTests):
 
     def test_run_circuitset_and_measure(self):
         # Given
-        simulator = CirqSimulator(n_samples=100)
+        simulator = CirqSimulator()
         circuit = Circuit([X(0), CNOT(1, 2)])
         n_circuits = 5
         n_samples = 100
         # When
-        measurements_set = simulator.run_circuitset_and_measure([circuit] * n_circuits)
+        measurements_set = simulator.run_circuitset_and_measure(
+            [circuit] * n_circuits, n_samples=[100] * n_circuits
+        )
         # Then
         assert len(measurements_set) == n_circuits
         for measurements in measurements_set:
@@ -77,7 +70,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
 
     def test_get_wavefunction(self):
         # Given
-        simulator = CirqSimulator(n_samples=100)
+        simulator = CirqSimulator()
         circuit = Circuit([H(0), CNOT(0, 1), CNOT(1, 2)])
 
         # When
@@ -94,8 +87,7 @@ class TestCirqSimulator(QuantumSimulatorTests):
 
     def test_get_exact_expectation_values(self):
         # Given
-        n_samples = 100
-        simulator = CirqSimulator(n_samples=n_samples)
+        simulator = CirqSimulator()
         circuit = Circuit([H(0), CNOT(0, 1), CNOT(1, 2)])
         qubit_operator = QubitOperator("2[] - [Z0 Z1] + [X0 X2]")
         target_values = np.array([2.0, -1.0, 0.0])
@@ -126,12 +118,12 @@ class TestCirqSimulator(QuantumSimulatorTests):
     def test_run_circuit_and_measure_seed(self):
         # Given
         circuit = Circuit([X(0), CNOT(1, 2)])
-        simulator1 = CirqSimulator(n_samples=1000, seed=12)
-        simulator2 = CirqSimulator(n_samples=1000, seed=12)
+        simulator1 = CirqSimulator(seed=12)
+        simulator2 = CirqSimulator(seed=12)
 
         # When
-        measurements1 = simulator1.run_circuit_and_measure(circuit)
-        measurements2 = simulator2.run_circuit_and_measure(circuit)
+        measurements1 = simulator1.run_circuit_and_measure(circuit, n_samples=1000)
+        measurements2 = simulator2.run_circuit_and_measure(circuit, n_samples=1000)
 
         # Then
         for (meas1, meas2) in zip(measurements1.bitstrings, measurements2.bitstrings):
