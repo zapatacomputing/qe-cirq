@@ -51,7 +51,7 @@ class CirqSimulator(QuantumSimulator):
         else:
             self.simulator = cirq.Simulator(seed=seed)
 
-    def run_circuit_and_measure(self, circuit: Circuit, n_samples=None, **kwargs):
+    def run_circuit_and_measure(self, circuit: Circuit, n_samples=None):
         """Run a circuit and measure a certain number of bitstrings.
 
         Args:
@@ -75,7 +75,7 @@ class CirqSimulator(QuantumSimulator):
         return measurement
 
     def run_circuitset_and_measure(
-        self, circuitset: List[Circuit], n_samples: List[int], **kwargs
+        self, circuitset: List[Circuit], n_samples: List[int]
     ):
         """Run a set of circuits and measure a certain number of bitstrings.
 
@@ -106,7 +106,7 @@ class CirqSimulator(QuantumSimulator):
 
         return measurements_set
 
-    def get_exact_expectation_values(self, circuit: Circuit, qubit_operator, **kwargs):
+    def get_exact_expectation_values(self, circuit: Circuit, qubit_operator):
         """Compute exact expectation values with respect to given operator.
 
         Args:
