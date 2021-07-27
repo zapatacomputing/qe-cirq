@@ -1,4 +1,4 @@
-# This workflow is meant to be triggered by push to master when running the release
+# This workflow is meant to be triggered by push to main when running the release
 # process.
 #
 # Don't extend this workflow. If any more steps are needed please extend the
@@ -8,7 +8,7 @@ name: publish-release
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   run-action:
