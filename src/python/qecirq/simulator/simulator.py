@@ -4,6 +4,8 @@ from typing import List
 import cirq
 import numpy as np
 from openfermion import get_sparse_operator
+from qecirq.conversions import export_to_cirq
+from zquantum.core.circuits import Circuit
 from zquantum.core.interfaces.backend import QuantumSimulator
 from zquantum.core.measurement import (
     ExpectationValues,
@@ -11,8 +13,6 @@ from zquantum.core.measurement import (
     expectation_values_to_real,
 )
 from zquantum.core.wavefunction import Wavefunction
-
-from qecirq.conversions import export_to_cirq
 
 
 def _prepare_measurable_cirq_circuit(circuit, noise_model):
