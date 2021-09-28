@@ -16,6 +16,6 @@ setuptools.setup(
     setup_requires=["setuptools_scm~=6.0"],
     install_requires=[
         "z-quantum-core",
-        "cirq>=0.9.1,<=0.10",
+        "cirq>=0.9.1,<=0.11",
     ],
 )
