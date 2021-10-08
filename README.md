@@ -6,17 +6,17 @@ An Orquestra Quantum Engine Resource for Cirq
 
 ## Overview
 
-Contained in this repository is an Orquestra quantum engine resource for using cirq. For more information regarding Orquestra and resources, please refer to the [Orquestra documentation](https://www.orquestra.io/docs).
+`qe-cirq` is a Python module that exposes Cirq's simulators as a [`z-quantum-core`](https://github.com/zapatacomputing/z-quantum-core/blob/master/src/python/zquantum/core/interfaces/backend.py) `QuantumSimulator`. The simulator can be easily imported using:
 
-
-## CirqSimulator
-
-Included in this resource is the `CirqSimulator` which implements the `zquantum.core.interfaces.QuantumSimulator` interface. 
-
-It can be imported with:
 ```
-from qeqiskit.simulator import CirqSimulator
+from qecirq.simulator import CirqSimulator
 ```
+
+In addition, it interfaces with the noise models and provides converters that allow switching between `cirq` circuits and those of `z-quantum-core`.
+
+The modeule can be used directly in Python or in an [Orquestra](https://www.orquestra.io) workflow.
+For more details, see the [Orquestra Cirq integration docs](http://docs.orquestra.io/other-resources/framework-integrations/cirq/).
+For more information regarding Orquestra and resources, please refer to the [Orquestra documentation](https://www.orquestra.io/docs).
 
 ## Development and contribution
 
