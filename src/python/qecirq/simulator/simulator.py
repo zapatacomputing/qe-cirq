@@ -6,7 +6,7 @@ import numpy as np
 from openfermion import get_sparse_operator
 from qecirq.conversions import export_to_cirq
 from zquantum.core.circuits import Circuit
-from zquantum.core.interfaces.backend import QuantumSimulator
+from zquantum.core.interfaces.backend import QuantumSimulator, StateVector
 from zquantum.core.measurement import (
     ExpectationValues,
     Measurements,
@@ -180,20 +180,10 @@ class CirqSimulator(QuantumSimulator):
                     values.append(expectation_value)
         return expectation_values_to_real(ExpectationValues(np.asarray(values)))
 
-    def get_wavefunction(self, circuit: Circuit):
-        """Run a circuit and get the wavefunction of the resulting statevector.
-
-        Args:
-            circuit: the circuit to prepare the state
-        Returns:
-            wavefunction: The wavefunction representing the final state of the circuit
-        """
-        super().get_wavefunction(circuit)
-
-        amplitudes = export_to_cirq(circuit).final_state_vector()
-        wavefunction = flip_wavefunction(Wavefunction(amplitudes))
-
-        return wavefunction
+    def _get_wavefunction_from_native_circuit(
+        self, circuit: Circuit, initial_state: StateVector
+    ) -> StateVector:
+        return export_to_cirq(circuit).final_state_vector(initial_state=initial_state)
 
 
 def get_measurement_from_cirq_result_object(result_object, n_qubits, n_samples):
@@ -221,17 +211,3 @@ def get_measurement_from_cirq_result_object(result_object, n_qubits, n_samples):
 
     measurement = Measurements(samples)
     return measurement
-
-
-def _flip_bits(n, num_bits):
-    return int(bin(n)[2:].zfill(num_bits)[::-1], 2)
-
-
-def flip_wavefunction(wavefunction: Wavefunction):
-    number_of_states = len(wavefunction.amplitudes)
-    ordering = [
-        _flip_bits(n, number_of_states.bit_length() - 1)
-        for n in range(number_of_states)
-    ]
-    flipped_amplitudes = [wavefunction.amplitudes[i] for i in ordering]
-    return Wavefunction(np.array(flipped_amplitudes))
