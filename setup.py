@@ -16,6 +16,8 @@ setuptools.setup(
     setup_requires=["setuptools_scm~=6.0"],
     install_requires=[
         "z-quantum-core",
+        # There's an upper bound on cirq-* libraries to guard against possible backward 
+        # incompatibilities in future 0.* versions.
         "cirq-core<=0.13",
         "cirq-google<=0.13",
     ],
