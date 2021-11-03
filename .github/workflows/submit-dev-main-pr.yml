@@ -1,10 +1,10 @@
 # This workflow is meant to be triggered by an Operator with via cURL.
 #
-# Don't extend this workflow. If any more steps are needed please extract the steps as a
-# composite action instead. This allows reusing it between repos.
-name: submit-dev-master-pr
+# Don't extend this workflow. If any more steps are needed please extract the
+# steps as a composite action instead. This allows reusing it between repos.
+name: submit-dev-main-pr
 
-on: 
+on:
   workflow_dispatch:
 
 jobs:
@@ -17,8 +17,7 @@ jobs:
           script: |
             github.pulls.create({
               ...context.repo,
-              title: "Merge dev to master",
+              title: "Merge dev to main",
               head: "dev",
               base: "main",
             })
-
