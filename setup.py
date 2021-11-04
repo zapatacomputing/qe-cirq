@@ -1,4 +1,15 @@
+import warnings
+
 import setuptools
+
+try:
+    from subtrees.z_quantum_actions.setup_extras import extras
+except ImportError:
+    warnings.warn("Unable to import extras")
+    extras = {}
+
+with open("README.md", "r") as f:
+    long_description = f.read()
 
 setuptools.setup(
     name="qe-cirq",
@@ -16,6 +27,10 @@ setuptools.setup(
     setup_requires=["setuptools_scm~=6.0"],
     install_requires=[
         "z-quantum-core",
-        "cirq>=0.9.1,<=0.11",
+        # There's an upper bound on cirq-* libraries to guard against possible backward
+        # incompatibilities in future 0.* versions.
+        "cirq-core<=0.13",
+        "cirq-google<=0.13",
     ],
+    extras_require=extras,
 )

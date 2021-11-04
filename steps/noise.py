@@ -1,16 +1,17 @@
-from zquantum.core.utils import create_object, save_noise_model
-from zquantum.core.typing import Specs
-import yaml
 import cirq
+import yaml
+from zquantum.core.typing import Specs
+from zquantum.core.utils import create_object, save_noise_model
 
 
 def get_cirq_noise_model(noise_model_func_specs: Specs, **kwargs):
-    """Creates a simple (pre-baked) Cirq noise model and saves it in an Orquestra compatible json
+    """Creates a simple (pre-baked) Cirq noise model and saves it in an Orquestra
+        compatible json
 
     Args:
-        specs: dictonary containing the following keys:  "module_name", "function_name", and
-            noise parameters such as T1, T2 (just T in some cases) and t_gate; all the times
-            should be specified in s.
+        specs: dictonary containing the following keys:  "module_name",
+            "function_name", and noise parameters such as T1, T2 (just T in some cases)
+            and t_gate; all the times should be specified in s.
     """
     if isinstance(noise_model_func_specs, str):
         noise_model_func_specs = yaml.load(
