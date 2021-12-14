@@ -31,6 +31,7 @@ setuptools.setup(
         # incompatibilities in future 0.* versions.
         "cirq-core<=0.13",
         "cirq-google<=0.13",
+        "openfermion==1.3",
     ],
     extras_require=extras,
 )
