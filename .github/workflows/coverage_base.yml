@@ -39,7 +39,8 @@ jobs:
 
       - name: Install z-quantum-core
         run: |
-          python3 -m pip install --user ./z-quantum-core
+          PYTHON=$(shell PATH="venv/bin:${PATH}" python3 -c 'import sys; print(sys.executable)')
+          $(PYTHON) -m pip install --user ./z-quantum-core
 
       - uses: ./subtrees/z_quantum_actions/actions/coverage
         with:
