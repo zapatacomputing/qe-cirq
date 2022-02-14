@@ -1,5 +1,6 @@
 import warnings
-
+import site
+import sys
 import setuptools
 
 try:
@@ -7,6 +8,9 @@ try:
 except ImportError:
     warnings.warn("Unable to import extras")
     extras = {}
+
+# Workaound for https://github.com/pypa/pip/issues/7953
+site.ENABLE_USER_SITE = "--user" in sys.argv[1:]
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -20,6 +24,8 @@ setuptools.setup(
     url="https://github.com/zapatacomputing/qe-cirq ",
     packages=setuptools.find_packages(where="src/python"),
     package_dir={"": "src/python"},
+    include_package_data=True,
+    zip_safe=False,
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

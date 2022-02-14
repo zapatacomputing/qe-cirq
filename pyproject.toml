@@ -8,6 +8,13 @@ requires = ["setuptools", "wheel",  "setuptools_scm>=6.0", "pygit2"]
 [tool.isort]
 profile = "black"
 
+[[tool.mypy.overrides]]
+module = [
+    'openfermion.*',
+    'sympy',
+]
+ignore_missing_imports = true
+
 [tool.mypy]
 # Without this we would have to add an empty __init__.py file for every package.
 namespace_packages = true
@@ -19,7 +26,6 @@ explicit_package_bases = true
 # directory path. If your repo has a different layout you can add the appropriate paths
 # by setting MYPYPATH env variable.
 mypy_path = "src:src/python"
-exclude = ['examples/*',]
 
 [tool.coverage.run]
 # main.py should be checked separately in an integration test.
