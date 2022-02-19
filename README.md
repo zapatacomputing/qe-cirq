@@ -14,7 +14,7 @@ from qecirq.simulator import CirqSimulator
 
 In addition, it interfaces with the noise models and provides converters that allow switching between `cirq` circuits and those of `z-quantum-core`.
 
-The modeule can be used directly in Python or in an [Orquestra](https://www.orquestra.io) workflow.
+The module can be used directly in Python or in an [Orquestra](https://www.orquestra.io) workflow.
 For more details, see the [Orquestra Cirq integration docs](http://docs.orquestra.io/other-resources/framework-integrations/cirq/).
 For more information regarding Orquestra and resources, please refer to the [Orquestra documentation](https://www.orquestra.io/docs).
 
