@@ -1,6 +1,7 @@
-import warnings
 import site
 import sys
+import warnings
+
 import setuptools
 
 try:
