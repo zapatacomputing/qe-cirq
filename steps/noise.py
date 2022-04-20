@@ -1,3 +1,6 @@
+################################################################################
+# © Copyright 2021 Zapata Computing Inc.
+################################################################################
 import cirq
 import yaml
 from zquantum.core.typing import Specs
