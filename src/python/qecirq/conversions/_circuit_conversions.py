@@ -96,6 +96,8 @@ ZQUANTUM_BUILTIN_GATE_NAME_TO_CIRQ_GATE: Dict[str, Callable] = {
     "I": cirq.I,
     "H": cirq.H,
     "S": cirq.S,
+    "SDG": cirq.S**-1,
+    "SX": cirq.X**0.5,
     "T": cirq.T,
     "RX": cirq.rx,
     "RY": cirq.ry,
@@ -227,7 +229,11 @@ def _export_to_cirq(obj):
 @_export_to_cirq.register
 def _export_matrix_factory_gate_to_cirq(gate: _gates.MatrixFactoryGate) -> cirq.Gate:
     try:
-        cirq_factory = ZQUANTUM_BUILTIN_GATE_NAME_TO_CIRQ_GATE[gate.name]
+        if gate.name.split(".")[0].lower() in ["sdg", "sx"]:
+            gate_name = gate.name.split(".")[0].upper()
+        else:
+            gate_name = gate.name
+        cirq_factory = ZQUANTUM_BUILTIN_GATE_NAME_TO_CIRQ_GATE[gate_name]
         cirq_params = (
             float(param) if isinstance(param, sympy.Expr) and param.is_Float else param
             for param in gate.params
